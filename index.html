@@ -20,6 +20,17 @@
       background: radial-gradient(1200px 600px at 15% 10%, #131a2e 0%, var(--bg) 55%) fixed;
       color:var(--text);
     }
+    body::before{
+  content:"";
+  position:fixed;
+  inset:0;
+  pointer-events:none;
+  opacity:0.06;          /* сила подложки */
+  filter:grayscale(1) blur(0.2px);
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1400' height='900' viewBox='0 0 1400 900'%3E%3Cg fill='none' stroke='%23ffffff' stroke-opacity='0.35'%3E%3Cpath d='M-50 760 C 260 620, 420 640, 760 520 S 1180 340, 1460 220' stroke-width='10'/%3E%3Cpath d='M-60 820 C 250 680, 430 700, 770 580 S 1200 400, 1480 280' stroke-width='6'/%3E%3Cpath d='M120 820 L 220 780 M260 760 L 360 720 M420 690 L 520 650 M580 620 L 680 580 M740 550 L 840 510 M900 480 L 1000 440 M1060 410 L 1160 370 M1220 340 L 1320 300' stroke-width='2' stroke-dasharray='10 16'/%3E%3Crect x='980' y='120' width='320' height='220' rx='18' stroke-width='3'/%3E%3Cpath d='M1010 300 H 1270 M1010 260 H 1270 M1010 220 H 1270' stroke-width='2'/%3E%3Cpath d='M160 160 H 520 M160 200 H 460 M160 240 H 560' stroke-width='3'/%3E%3Cpath d='M620 120 L 780 120 L 740 200 L 660 200 Z' stroke-width='3'/%3E%3Cpath d='M700 200 V 310' stroke-width='3'/%3E%3Cpath d='M650 310 H 750' stroke-width='3'/%3E%3C/g%3E%3C/svg%3E") center/cover no-repeat;
+}
+
     .wrap{ max-width:1100px; margin:0 auto; padding:28px 18px 40px; }
 
     .topbar{
