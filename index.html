@@ -3,14 +3,12 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Roadline — Professional Transport Access</title>
-  <meta name="description" content="Roadline connects professionals, not profiles. Direct access, verification and respect on both sides.">
+  <title>Roadline — Professional Access</title>
+  <meta name="description" content="Roadline connects professionals, not profiles. Drivers & operators. Direct access, verification and respect on both sides.">
 
   <style>
     :root{
       --bg:#0b0c10;
-      --panel:#111318;
-      --card:#141824;
       --text:#f2f3f5;
       --muted:#a9afbd;
       --line:#242a38;
@@ -36,9 +34,7 @@
     p{ margin:0; color:var(--muted); font-size:14px; line-height:1.55; }
     a{ color:var(--text); text-decoration: underline; }
 
-    .lang{
-      display:flex; gap:6px; align-items:center;
-    }
+    .lang{ display:flex; gap:6px; align-items:center; }
     .lang button{
       background:transparent;
       border:1px solid var(--line);
@@ -50,10 +46,7 @@
       transition: border-color .08s ease, color .08s ease, transform .08s ease;
     }
     .lang button:hover{ transform: translateY(-1px); border-color:#3a4258; }
-    .lang button.active{
-      color:var(--text);
-      border-color:#3a4258;
-    }
+    .lang button.active{ color:var(--text); border-color:#3a4258; }
 
     .board{
       margin-top:14px;
@@ -61,7 +54,8 @@
       grid-template-columns:1.2fr 1fr;
       gap:14px;
     }
-    @media (max-width:900px){
+    /* keep 2 columns for more desktop widths */
+    @media (max-width: 760px){
       .board{ grid-template-columns:1fr; }
     }
 
@@ -75,9 +69,7 @@
     .tiles{
       display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:12px;
     }
-    @media (max-width:520px){
-      .tiles{ grid-template-columns:1fr; }
-    }
+    @media (max-width:520px){ .tiles{ grid-template-columns:1fr; } }
     .tile{
       display:block;
       text-decoration:none;
@@ -102,11 +94,9 @@
       padding:4px 2px 0;
     }
 
-    /* Language blocks */
     [data-lang]{ display:none; }
     [data-lang].active{ display:block; }
 
-    /* Small helpers */
     .lead{ margin-top:8px; }
     .strong{ color:var(--text); font-weight:700; }
     .hint{ margin-top:10px; }
@@ -123,40 +113,40 @@
 
       <!-- Subtitle -->
       <div class="lead" data-lang="en">
-        <p>Access to the professional transport market — direct contact, verification and professional standards.</p>
+        <p>Professional access for <span class="strong">drivers & operators</span> — direct contact, verification and standards.</p>
       </div>
       <div class="lead" data-lang="ru">
-        <p>Доступ к профессиональному транспортному рынку — прямой контакт, проверка и профессиональные стандарты.</p>
+        <p>Профессиональный доступ для <span class="strong">водителей и операторов техники</span> — прямой контакт, проверка и стандарты.</p>
       </div>
       <div class="lead" data-lang="pl">
-        <p>Dostęp do profesjonalnego rynku transportowego — bezpośredni kontakt, weryfikacja i standardy zawodowe.</p>
+        <p>Profesjonalny dostęp dla <span class="strong">kierowców i operatorów</span> — bezpośredni kontakt, weryfikacja i standardy.</p>
       </div>
 
-      <!-- Quick tiles (dashboard feel) -->
+      <!-- Quick tiles -->
       <div class="tiles" style="margin-top:12px;">
         <a class="tile" href="#drivers">
           <p class="t-title">
-            <span data-lang="en">For Drivers</span>
-            <span data-lang="ru">Для водителей</span>
-            <span data-lang="pl">Dla kierowców</span>
+            <span data-lang="en">Drivers & Operators</span>
+            <span data-lang="ru">Водители и операторы</span>
+            <span data-lang="pl">Kierowcy i operatorzy</span>
           </p>
           <p class="t-desc">
-            <span data-lang="en">Experienced professionals. Transparent cooperation. No agencies.</span>
-            <span data-lang="ru">Опытные профессионалы. Прозрачное сотрудничество. Без агентств.</span>
-            <span data-lang="pl">Doświadczeni profesjonaliści. Przejrzysta współpraca. Bez agencji.</span>
+            <span data-lang="en">Transport + heavy machinery. No agencies. No mass recruitment.</span>
+            <span data-lang="ru">Транспорт + тяжёлая техника. Без агентств. Без массового найма.</span>
+            <span data-lang="pl">Transport + ciężki sprzęt. Bez agencji. Bez masowej rekrutacji.</span>
           </p>
         </a>
 
-        <a class="tile" href="#carriers">
+        <a class="tile" href="#employers">
           <p class="t-title">
-            <span data-lang="en">For Transport Companies</span>
-            <span data-lang="ru">Для компаний</span>
-            <span data-lang="pl">Dla firm transportowych</span>
+            <span data-lang="en">Companies / Employers</span>
+            <span data-lang="ru">Компании / работодатели</span>
+            <span data-lang="pl">Firmy / pracodawcy</span>
           </p>
           <p class="t-desc">
-            <span data-lang="en">Direct access to verified drivers. Clear expectations.</span>
-            <span data-lang="ru">Прямой доступ к проверенным водителям. Чёткие ожидания.</span>
-            <span data-lang="pl">Bezpośredni dostęp do zweryfikowanych kierowców. Jasne oczekiwania.</span>
+            <span data-lang="en">Direct access to verified professionals.</span>
+            <span data-lang="ru">Прямой доступ к проверенным профессионалам.</span>
+            <span data-lang="pl">Bezpośredni dostęp do zweryfikowanych profesjonalistów.</span>
           </p>
         </a>
 
@@ -195,7 +185,7 @@
   <!-- BOARD -->
   <div class="board">
 
-    <!-- Mission (main card) -->
+    <!-- Mission -->
     <div class="card" id="mission">
       <h2>
         <span data-lang="en">Our mission</span>
@@ -206,7 +196,7 @@
       <div data-lang="en">
         <p class="strong">Roadline connects professionals, not profiles.</p>
         <p class="hint">
-          We believe that the transport market works best when drivers and carriers communicate directly,
+          We believe the market works best when drivers, operators and employers communicate directly,
           expectations are clear, and experience is valued over numbers.
         </p>
         <p class="hint">
@@ -217,7 +207,7 @@
       <div data-lang="ru">
         <p class="strong">Roadline соединяет профессионалов, а не анкеты.</p>
         <p class="hint">
-          Мы верим, что транспортный рынок работает лучше, когда водители и компании общаются напрямую,
+          Мы верим, что рынок работает лучше, когда водители, операторы и работодатели общаются напрямую,
           ожидания понятны, а опыт ценится выше количества.
         </p>
         <p class="hint">
@@ -228,7 +218,7 @@
       <div data-lang="pl">
         <p class="strong">Roadline łączy profesjonalistów, nie profile.</p>
         <p class="hint">
-          Wierzymy, że rynek transportowy działa najlepiej, gdy kierowcy i firmy komunikują się bezpośrednio,
+          Wierzymy, że rynek działa najlepiej, gdy kierowcy, operatorzy i pracodawcy komunikują się bezpośrednio,
           oczekiwania są jasne, a doświadczenie liczy się bardziej niż liczby.
         </p>
         <p class="hint">
@@ -239,44 +229,46 @@
 
     <!-- Right column -->
     <div class="split">
+
       <div class="card" id="drivers">
         <h2>
-          <span data-lang="en">For drivers</span>
-          <span data-lang="ru">Для водителей</span>
-          <span data-lang="pl">Dla kierowców</span>
+          <span data-lang="en">For drivers & operators</span>
+          <span data-lang="ru">Для водителей и операторов</span>
+          <span data-lang="pl">Dla kierowców i operatorów</span>
         </h2>
 
         <div data-lang="en">
-          <p>For experienced professionals seeking transparent cooperation without agencies or mass recruitment.</p>
+          <p>For professional drivers and machine operators: trucks, buses, construction and heavy equipment.</p>
         </div>
         <div data-lang="ru">
-          <p>Для опытных водителей, которые ищут прозрачное сотрудничество без агентств и массового найма.</p>
+          <p>Для профессиональных водителей и операторов техники: грузовики, автобусы, строительная и тяжёлая техника.</p>
         </div>
         <div data-lang="pl">
-          <p>Dla doświadczonych kierowców szukających przejrzystej współpracy bez agencji i masowej rekrutacji.</p>
+          <p>Dla zawodowych kierowców i operatorów: ciężarówki, autobusy, maszyny budowlane i ciężki sprzęt.</p>
         </div>
       </div>
 
-      <div class="card" id="carriers">
+      <div class="card" id="employers">
         <h2>
-          <span data-lang="en">For transport companies</span>
-          <span data-lang="ru">Для компаний</span>
-          <span data-lang="pl">Dla firm transportowych</span>
+          <span data-lang="en">For companies / employers</span>
+          <span data-lang="ru">Для компаний / работодателей</span>
+          <span data-lang="pl">Dla firm / pracodawców</span>
         </h2>
 
         <div data-lang="en">
-          <p>Direct access to verified drivers. Clear expectations. Long-term cooperation.</p>
+          <p>For transport and construction companies looking for verified professional drivers and operators.</p>
         </div>
         <div data-lang="ru">
-          <p>Прямой доступ к проверенным водителям. Чёткие ожидания. Долгосрочное сотрудничество.</p>
+          <p>Для транспортных и строительных компаний, которым нужны проверенные профессиональные водители и операторы.</p>
         </div>
         <div data-lang="pl">
-          <p>Bezpośredni dostęp do zweryfikowanych kierowców. Jasne oczekiwania. Długoterminowa współpraca.</p>
+          <p>Dla firm transportowych i budowlanych, które szukają zweryfikowanych zawodowych kierowców i operatorów.</p>
         </div>
       </div>
+
     </div>
 
-    <!-- Full-width: Difference -->
+    <!-- Difference -->
     <div class="card" style="grid-column:1 / -1;">
       <h2>
         <span data-lang="en">What makes Roadline different</span>
@@ -298,7 +290,7 @@
       </div>
     </div>
 
-    <!-- Full-width: Status -->
+    <!-- Status -->
     <div class="card" style="grid-column:1 / -1;">
       <h2>
         <span data-lang="en">Project status</span>
@@ -307,17 +299,17 @@
       </h2>
 
       <div data-lang="en">
-        <p>Early stage. Roadline is forming its first professional network and establishing direct contacts with drivers and carriers.</p>
+        <p>Early stage. Roadline is forming its first professional network and establishing direct contacts between professionals and employers.</p>
       </div>
       <div data-lang="ru">
-        <p>Ранняя стадия. Roadline формирует первую профессиональную сеть и выстраивает прямые контакты между водителями и компаниями.</p>
+        <p>Ранняя стадия. Roadline формирует первую профессиональную сеть и выстраивает прямые контакты между специалистами и работодателями.</p>
       </div>
       <div data-lang="pl">
-        <p>Wczesny etap. Roadline tworzy pierwszą sieć profesjonalną i nawiązuje bezpośrednie kontakty między kierowcami a firmami.</p>
+        <p>Wczesny etap. Roadline tworzy pierwszą sieć profesjonalną i buduje bezpośrednie kontakty między specjalistami a pracodawcami.</p>
       </div>
     </div>
 
-    <!-- Full-width: Contact -->
+    <!-- Contact -->
     <div class="card" id="access" style="grid-column:1 / -1;">
       <h2>
         <span data-lang="en">Contact / Access</span>
@@ -328,13 +320,13 @@
       <p>Email: <a href="mailto:hello@roadline.pro">hello@roadline.pro</a></p>
 
       <div class="hint" data-lang="en">
-        <p>If you’re a serious carrier or an experienced driver — write one line: who you are, which countries you work with, and what you need.</p>
+        <p>Write one line: who you are, which countries you work with, and what you need.</p>
       </div>
       <div class="hint" data-lang="ru">
-        <p>Если ты перевозчик или опытный водитель — напиши одной строкой: кто ты, какие страны, и что нужно.</p>
+        <p>Напиши одной строкой: кто ты, какие страны, и что нужно.</p>
       </div>
       <div class="hint" data-lang="pl">
-        <p>Jeśli jesteś poważnym przewoźnikiem lub doświadczonym kierowcą — napisz jedną linijkę: kim jesteś, jakie kraje, i czego potrzebujesz.</p>
+        <p>Napisz jedną linijkę: kim jesteś, jakie kraje, i czego potrzebujesz.</p>
       </div>
     </div>
 
@@ -361,23 +353,14 @@
 
   function normalizeDetectedLang(raw){
     const l = (raw || 'en').toLowerCase();
-
-    // Prefer PL for Polish devices
     if (l.startsWith('pl')) return 'pl';
-
-    // RU also for Ukrainian/Belarusian (common audience)
     if (l.startsWith('ru') || l.startsWith('uk') || l.startsWith('be')) return 'ru';
-
-    // Default to EN
     return 'en';
   }
 
   function detectLang(){
     const saved = localStorage.getItem('roadline_lang');
-    if(saved){
-      applyLang(saved);
-      return;
-    }
+    if(saved){ applyLang(saved); return; }
     const browser = navigator.language || (navigator.languages && navigator.languages[0]) || 'en';
     applyLang(normalizeDetectedLang(browser));
   }
@@ -387,12 +370,10 @@
     applyLang(lang);
   }
 
-  // Wire buttons
   document.querySelectorAll('.lang button').forEach(btn=>{
     btn.addEventListener('click', ()=> setLang(btn.dataset.setlang));
   });
 
-  // Init
   detectLang();
 </script>
 
