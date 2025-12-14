@@ -67,8 +67,12 @@
     }
 
     .tiles{
-      display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:12px;
-    }
+  display:grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap:12px;
+  margin-top:12px;
+}
+
     @media (max-width:520px){ .tiles{ grid-template-columns:1fr; } }
     .tile{
       display:block;
