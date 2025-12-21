@@ -48,7 +48,7 @@
     p{ margin:0; font-size:14px; line-height:1.55; color:var(--muted); }
     .strong{ color:var(--text); font-weight:700; }
 
-    /* Top nav */
+    /* NAV + language dropdown */
     .nav{
       border:1px solid var(--line);
       border-radius:14px;
@@ -61,14 +61,26 @@
       gap:12px;
       flex-wrap:wrap;
     }
-    .brand{ display:flex; align-items:baseline; gap:10px; }
+    .brand{
+      display:flex;
+      flex-direction:column;
+      gap:2px;
+      min-width:220px;
+    }
     .brand .name{ color:var(--text); font-weight:700; letter-spacing:.2px; }
-    .brand .date{ color:var(--muted); font-size:12px; }
+    .brand .tagline{ font-size:12px; color:var(--muted); }
 
+    .nav-right{
+      display:flex;
+      gap:8px;
+      align-items:center;
+      flex-wrap:wrap;
+    }
     .menu{
       display:flex;
       gap:8px;
       flex-wrap:wrap;
+      align-items:center;
     }
     .menu a{
       text-decoration:none;
@@ -77,11 +89,22 @@
       border-radius:10px;
       padding:6px 10px;
       font-size:12px;
-      transition: transform .08s ease, border-color .08s ease, color .08s ease;
       background:rgba(17,19,24,.35);
+      transition: transform .08s ease, border-color .08s ease, color .08s ease;
     }
     .menu a:hover{ transform: translateY(-1px); border-color:#3a4258; color:var(--text); }
     .menu a.active{ color:var(--text); border-color:#3a4258; }
+
+    .lang-select{
+      border:1px solid var(--line);
+      border-radius:10px;
+      padding:6px 10px;
+      font-size:12px;
+      color:var(--text);
+      background:rgba(17,19,24,.35);
+      outline:none;
+      cursor:pointer;
+    }
 
     .topbar{
       margin-top:12px;
@@ -93,35 +116,15 @@
     }
     .lead{ margin-top:8px; margin-bottom:18px; }
 
-    .lang{
-      display:flex;
-      gap:6px;
-      margin-top:12px;
-      flex-wrap:wrap;
-    }
-    .lang button{
-      background:transparent;
-      border:1px solid var(--line);
-      color:var(--muted);
-      padding:6px 10px;
-      border-radius:10px;
-      cursor:pointer;
-      font-size:12px;
-      transition: border-color .08s ease, color .08s ease, transform .08s ease;
-    }
-    .lang button:hover{ transform: translateY(-1px); border-color:#3a4258; }
-    .lang button.active{ color:var(--text); border-color:#3a4258; }
-
     .tiles{
       display:grid;
-      grid-template-columns: 1fr;
+      grid-template-columns:1fr;
       gap:12px;
       margin-top:12px;
       width:100%;
     }
     .tile{
       width:100%;
-      display:block;
       border:1px solid var(--line);
       border-radius:14px;
       padding:14px;
@@ -137,7 +140,6 @@
       padding:16px;
       margin-top:14px;
     }
-
     .board{
       display:grid;
       grid-template-columns:1fr;
@@ -145,7 +147,6 @@
       margin-top:14px;
       width:100%;
     }
-
     .footer{
       margin-top:18px;
       font-size:12px;
@@ -158,6 +159,8 @@
 
     [data-lang]{ display:none; }
     [data-lang].active{ display:block; }
+    [data-lang-inline]{ display:none; }
+    [data-lang-inline].active{ display:inline; }
   </style>
 </head>
 
@@ -168,14 +171,58 @@
   <div class="nav">
     <div class="brand">
       <div class="name">Roadline</div>
-      <div class="date">v1 • 14.12.2025</div>
+      <div class="tagline">
+        <span data-lang-inline="ru" class="active">Профессиональный доступ к рынку профессионалов</span>
+        <span data-lang-inline="uk">Професійний доступ до ринку професіоналів</span>
+        <span data-lang-inline="en">Professional access to the market of professionals</span>
+        <span data-lang-inline="pl">Profesjonalny dostęp do rynku profesjonalistów</span>
+      </div>
     </div>
-    <div class="menu">
-      <a class="active" href="index.html">Home</a>
-      <a href="drivers.html">Drivers & Operators</a>
-      <a href="companies.html">Companies</a>
-      <a href="index.html#standards">Standards</a>
-      <a href="index.html#contact">Contact</a>
+
+    <div class="nav-right">
+      <div class="menu">
+        <a class="active" href="index.html">
+          <span data-lang-inline="ru" class="active">Главная</span>
+          <span data-lang-inline="uk">Головна</span>
+          <span data-lang-inline="en">Home</span>
+          <span data-lang-inline="pl">Start</span>
+        </a>
+
+        <a href="drivers.html">
+          <span data-lang-inline="ru" class="active">Водители</span>
+          <span data-lang-inline="uk">Водії</span>
+          <span data-lang-inline="en">Drivers</span>
+          <span data-lang-inline="pl">Kierowcy</span>
+        </a>
+
+        <a href="companies.html">
+          <span data-lang-inline="ru" class="active">Компании</span>
+          <span data-lang-inline="uk">Компанії</span>
+          <span data-lang-inline="en">Companies</span>
+          <span data-lang-inline="pl">Firmy</span>
+        </a>
+
+        <a href="standards.html">
+          <span data-lang-inline="ru" class="active">Стандарты</span>
+          <span data-lang-inline="uk">Стандарти</span>
+          <span data-lang-inline="en">Standards</span>
+          <span data-lang-inline="pl">Standardy</span>
+        </a>
+
+        <a href="contact.html">
+          <span data-lang-inline="ru" class="active">Контакт</span>
+          <span data-lang-inline="uk">Контакт</span>
+          <span data-lang-inline="en">Contact</span>
+          <span data-lang-inline="pl">Kontakt</span>
+        </a>
+      </div>
+
+      <select class="lang-select" id="langSelect" aria-label="Language">
+        <option value="ru">RU</option>
+        <option value="uk">UA</option>
+        <option value="en">EN</option>
+        <option value="pl">PL</option>
+      </select>
     </div>
   </div>
 
@@ -237,19 +284,11 @@
         <p data-lang="pl">Zasady platformy i współpracy.</p>
       </div>
     </div>
-
-    <div class="lang">
-      <button data-setlang="ru">RU</button>
-      <button data-setlang="uk">UA</button>
-      <button data-setlang="en">EN</button>
-      <button data-setlang="pl">PL</button>
-    </div>
   </div>
 
   <!-- CONTENT -->
   <div class="board">
-
-    <div class="card" id="standards">
+    <div class="card">
       <h2 data-lang="ru">Наша миссия</h2>
       <h2 data-lang="uk">Наша місія</h2>
       <h2 data-lang="en">Our mission</h2>
@@ -265,33 +304,6 @@
       <p data-lang="en">Our mission is to restore professional trust through access, verification and respect on both sides.</p>
       <p data-lang="pl">Naszą misją jest przywrócenie zaufania zawodowego poprzez dostęp, weryfikację i szacunek po obu stronach.</p>
     </div>
-
-    <div class="card">
-      <h2 data-lang="ru">Дальше по структуре</h2>
-      <h2 data-lang="uk">Далі за структурою</h2>
-      <h2 data-lang="en">Next in structure</h2>
-      <h2 data-lang="pl">Dalej w strukturze</h2>
-
-      <p data-lang="ru">Страницы уже заложены в меню: Drivers & Operators, Companies, Standards, Contact.</p>
-      <p data-lang="uk">Сторінки вже закладені в меню: Drivers & Operators, Companies, Standards, Contact.</p>
-      <p data-lang="en">Pages are already in the menu: Drivers & Operators, Companies, Standards, Contact.</p>
-      <p data-lang="pl">Strony są już w menu: Drivers & Operators, Companies, Standards, Contact.</p>
-    </div>
-
-    <div class="card" id="contact">
-      <h2 data-lang="ru">Контакт</h2>
-      <h2 data-lang="uk">Контакт</h2>
-      <h2 data-lang="en">Contact</h2>
-      <h2 data-lang="pl">Kontakt</h2>
-
-      <p class="strong">hello@roadline.pro</p>
-
-      <p data-lang="ru">Напишите одной строкой: кто вы, какие страны/техника, и что вам нужно.</p>
-      <p data-lang="uk">Напишіть одним рядком: хто ви, які країни/техніка, і що вам потрібно.</p>
-      <p data-lang="en">Write one line: who you are, countries/equipment, and what you need.</p>
-      <p data-lang="pl">Napisz jedną linijkę: kim jesteś, jakie kraje/sprzęt i czego potrzebujesz.</p>
-    </div>
-
   </div>
 
   <div class="footer">
@@ -302,14 +314,16 @@
 </div>
 
 <script>
-  function applyLang(lang){
+  function setLangUI(lang){
     document.querySelectorAll('[data-lang]').forEach(el=>{
       el.classList.toggle('active', el.dataset.lang === lang);
     });
-    document.querySelectorAll('.lang button').forEach(btn=>{
-      btn.classList.toggle('active', btn.dataset.setlang === lang);
+    document.querySelectorAll('[data-lang-inline]').forEach(el=>{
+      el.classList.toggle('active', el.dataset.langInline === lang);
     });
     document.documentElement.lang = lang;
+    const sel = document.getElementById('langSelect');
+    if(sel) sel.value = lang;
   }
 
   function normalizeDetectedLang(raw){
@@ -322,20 +336,23 @@
 
   function detectLang(){
     const saved = localStorage.getItem('roadline_lang');
-    if(saved){ applyLang(saved); return; }
+    if(saved){ setLangUI(saved); return saved; }
     const browser = navigator.language || (navigator.languages && navigator.languages[0]) || 'en';
-    applyLang(normalizeDetectedLang(browser));
+    const lang = normalizeDetectedLang(browser);
+    setLangUI(lang);
+    return lang;
   }
 
-  document.querySelectorAll('.lang button').forEach(btn=>{
-    btn.addEventListener('click', ()=>{
-      const lang = btn.dataset.setlang;
-      localStorage.setItem('roadline_lang', lang);
-      applyLang(lang);
-    });
-  });
+  const currentLang = detectLang();
 
-  detectLang();
+  const langSelect = document.getElementById('langSelect');
+  if(langSelect){
+    langSelect.addEventListener('change', ()=>{
+      const lang = langSelect.value;
+      localStorage.setItem('roadline_lang', lang);
+      setLangUI(lang);
+    });
+  }
 </script>
 
 </body>
