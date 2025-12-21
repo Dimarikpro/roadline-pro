@@ -123,14 +123,26 @@
       margin-top:12px;
       width:100%;
     }
-    .tile{
+
+    /* ✅ clickable tile as link */
+    .tile-link{
+      display:block;
       width:100%;
+      text-decoration:none;
+      color:inherit;
       border:1px solid var(--line);
       border-radius:14px;
       padding:14px;
       background:rgba(17,19,24,.65);
+      transition: transform .08s ease, border-color .08s ease, background .08s ease;
     }
-    .tile *{ max-width:100%; }
+    .tile-link:hover{
+      transform: translateY(-1px);
+      border-color:#3a4258;
+      background:rgba(20,24,36,.78);
+    }
+    .tile-link:active{ transform: translateY(0px); }
+    .tile-link *{ max-width:100%; }
 
     .card{
       width:100%;
@@ -247,62 +259,59 @@
       <p>Bezpośredni kontakt. Weryfikacja. Standardy zawodowe.</p>
     </div>
 
+    <!-- ✅ Clickable tiles -->
     <div class="tiles">
-      <div class="tile">
-        <p class="strong" data-lang="ru">Водители и операторы</p>
-        <p class="strong" data-lang="uk">Водії та оператори</p>
-        <p class="strong" data-lang="en">Drivers & operators</p>
-        <p class="strong" data-lang="pl">Kierowcy i operatorzy</p>
+
+      <a class="tile-link" href="drivers.html">
+        <p class="strong" data-lang="ru">Водители и операторы →</p>
+        <p class="strong" data-lang="uk">Водії та оператори →</p>
+        <p class="strong" data-lang="en">Drivers & operators →</p>
+        <p class="strong" data-lang="pl">Kierowcy i operatorzy →</p>
 
         <p data-lang="ru">Транспорт и тяжёлая техника. Без агентств. Без массового найма.</p>
         <p data-lang="uk">Транспорт і важка техніка. Без агенцій. Без масового найму.</p>
         <p data-lang="en">Transport & heavy machinery. No agencies. No mass hiring.</p>
         <p data-lang="pl">Transport i ciężki sprzęt. Bez agencji. Bez masowego zatrudniania.</p>
-      </div>
+      </a>
 
-      <div class="tile">
-        <p class="strong" data-lang="ru">Компании / работодатели</p>
-        <p class="strong" data-lang="uk">Компанії / роботодавці</p>
-        <p class="strong" data-lang="en">Companies / employers</p>
-        <p class="strong" data-lang="pl">Firmy / pracodawcy</p>
+      <a class="tile-link" href="companies.html">
+        <p class="strong" data-lang="ru">Компании / работодатели →</p>
+        <p class="strong" data-lang="uk">Компанії / роботодавці →</p>
+        <p class="strong" data-lang="en">Companies / employers →</p>
+        <p class="strong" data-lang="pl">Firmy / pracodawcy →</p>
 
         <p data-lang="ru">Прямой доступ к проверенным профессионалам.</p>
         <p data-lang="uk">Прямий доступ до перевірених професіоналів.</p>
         <p data-lang="en">Direct access to verified professionals.</p>
         <p data-lang="pl">Bezpośredni dostęp do zweryfikowanych profesjonalistów.</p>
-      </div>
+      </a>
 
-      <div class="tile">
-        <p class="strong" data-lang="ru">Миссия и стандарты</p>
-        <p class="strong" data-lang="uk">Місія та стандарти</p>
-        <p class="strong" data-lang="en">Mission & standards</p>
-        <p class="strong" data-lang="pl">Misja i standardy</p>
+      <a class="tile-link" href="standards.html">
+        <p class="strong" data-lang="ru">Миссия и стандарты →</p>
+        <p class="strong" data-lang="uk">Місія та стандарти →</p>
+        <p class="strong" data-lang="en">Mission & standards →</p>
+        <p class="strong" data-lang="pl">Misja i standardy →</p>
 
         <p data-lang="ru">Принципы платформы и правила взаимодействия.</p>
         <p data-lang="uk">Принципи платформи та правила взаємодії.</p>
         <p data-lang="en">Platform principles and rules of cooperation.</p>
         <p data-lang="pl">Zasady platformy i współpracy.</p>
-      </div>
+      </a>
+
     </div>
   </div>
 
-  <!-- CONTENT -->
   <div class="board">
     <div class="card">
-      <h2 data-lang="ru">Наша миссия</h2>
-      <h2 data-lang="uk">Наша місія</h2>
-      <h2 data-lang="en">Our mission</h2>
-      <h2 data-lang="pl">Nasza misja</h2>
+      <h2 data-lang="ru">Коротко</h2>
+      <h2 data-lang="uk">Коротко</h2>
+      <h2 data-lang="en">In short</h2>
+      <h2 data-lang="pl">W skrócie</h2>
 
-      <p class="strong" data-lang="ru">Roadline соединяет профессионалов, а не анкеты.</p>
-      <p class="strong" data-lang="uk">Roadline поєднує професіоналів, а не анкети.</p>
-      <p class="strong" data-lang="en">Roadline connects professionals, not profiles.</p>
-      <p class="strong" data-lang="pl">Roadline łączy profesjonalistów, nie profile.</p>
-
-      <p data-lang="ru">Наша миссия — вернуть профессиональное доверие через доступ, проверку и уважение с обеих сторон.</p>
-      <p data-lang="uk">Наша місія — повернути професійну довіру через доступ, перевірку та повагу з обох сторін.</p>
-      <p data-lang="en">Our mission is to restore professional trust through access, verification and respect on both sides.</p>
-      <p data-lang="pl">Naszą misją jest przywrócenie zaufania zawodowego poprzez dostęp, weryfikację i szacunek po obu stronach.</p>
+      <p data-lang="ru">Roadline — это прямой рынок профессионалов. Без агентств. С правилами и уважением.</p>
+      <p data-lang="uk">Roadline — це прямий ринок професіоналів. Без агенцій. З правилами та повагою.</p>
+      <p data-lang="en">Roadline is a direct market of professionals. No agencies. Standards and respect.</p>
+      <p data-lang="pl">Roadline to bezpośredni rynek profesjonalistów. Bez agencji. Standardy i szacunek.</p>
     </div>
   </div>
 
@@ -336,14 +345,10 @@
 
   function detectLang(){
     const saved = localStorage.getItem('roadline_lang');
-    if(saved){ setLangUI(saved); return saved; }
+    if(saved){ setLangUI(saved); return; }
     const browser = navigator.language || (navigator.languages && navigator.languages[0]) || 'en';
-    const lang = normalizeDetectedLang(browser);
-    setLangUI(lang);
-    return lang;
+    setLangUI(normalizeDetectedLang(browser));
   }
-
-  const currentLang = detectLang();
 
   const langSelect = document.getElementById('langSelect');
   if(langSelect){
@@ -353,6 +358,8 @@
       setLangUI(lang);
     });
   }
+
+  detectLang();
 </script>
 
 </body>
