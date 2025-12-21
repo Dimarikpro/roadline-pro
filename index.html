@@ -22,7 +22,6 @@
       color:var(--text);
     }
 
-    /* background watermark */
     body::before{
       content:"";
       position:fixed;
@@ -31,7 +30,7 @@
       opacity:0.06;
       filter:grayscale(1) blur(0.2px);
       background:
-        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1400' height='900' viewBox='0 0 1400 900'%3E%3Cg fill='none' stroke='%23ffffff' stroke-opacity='0.35'%3E%3Cpath d='M-50 760 C 260 620, 420 640, 760 520 S 1180 340, 1460 220' stroke-width='10'/%3E%3Cpath d='M-60 820 C 250 680, 430 700, 770 580 S 1200 400, 1480 280' stroke-width='6'/%3E%3Cpath d='M160 160 H 520 M160 200 H 460 M160 240 H 560' stroke-width='3'/%3E%3Crect x='980' y='120' width='320' height='220' rx='18' stroke-width='3'/%3E%3C/g%3E%3C/svg%3E")
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1400' height='900' viewBox='0 0 1400 900'%3E%3Cg fill='none' stroke='%23ffffff' stroke-opacity='0.35'%3E%3Cpath d='M-50 760 C 260 620, 420 640, 760 520 S 1180 340, 1460 220' stroke-width='10'/%3E%3Cpath d='M-60 820 C 250 680, 430 700, 770 580 S 1200 400, 1480 280' stroke-width='6'/%3E%3Crect x='980' y='120' width='320' height='220' rx='18' stroke-width='3'/%3E%3C/g%3E%3C/svg%3E")
         center/cover no-repeat;
       z-index:0;
     }
@@ -39,9 +38,9 @@
     .wrap{
       position:relative;
       z-index:1;
-      max-width:820px; /* unified reading width on desktop */
+      max-width:820px;
       margin:0 auto;
-      padding:28px 18px 40px;
+      padding:22px 18px 40px;
     }
 
     h1{ margin:0; font-size:28px; letter-spacing:.2px; }
@@ -49,14 +48,49 @@
     p{ margin:0; font-size:14px; line-height:1.55; color:var(--muted); }
     .strong{ color:var(--text); font-weight:700; }
 
+    /* Top nav */
+    .nav{
+      border:1px solid var(--line);
+      border-radius:14px;
+      background:rgba(17,19,24,.65);
+      backdrop-filter: blur(8px);
+      padding:12px 14px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      flex-wrap:wrap;
+    }
+    .brand{ display:flex; align-items:baseline; gap:10px; }
+    .brand .name{ color:var(--text); font-weight:700; letter-spacing:.2px; }
+    .brand .date{ color:var(--muted); font-size:12px; }
+
+    .menu{
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+    }
+    .menu a{
+      text-decoration:none;
+      color:var(--muted);
+      border:1px solid var(--line);
+      border-radius:10px;
+      padding:6px 10px;
+      font-size:12px;
+      transition: transform .08s ease, border-color .08s ease, color .08s ease;
+      background:rgba(17,19,24,.35);
+    }
+    .menu a:hover{ transform: translateY(-1px); border-color:#3a4258; color:var(--text); }
+    .menu a.active{ color:var(--text); border-color:#3a4258; }
+
     .topbar{
+      margin-top:12px;
       border:1px solid var(--line);
       border-radius:14px;
       background:rgba(17,19,24,.65);
       backdrop-filter: blur(8px);
       padding:16px;
     }
-
     .lead{ margin-top:8px; margin-bottom:18px; }
 
     .lang{
@@ -78,7 +112,6 @@
     .lang button:hover{ transform: translateY(-1px); border-color:#3a4258; }
     .lang button.active{ color:var(--text); border-color:#3a4258; }
 
-    /* ✅ FIX: tiles full width, same as cards */
     .tiles{
       display:grid;
       grid-template-columns: 1fr;
@@ -94,7 +127,7 @@
       padding:14px;
       background:rgba(17,19,24,.65);
     }
-    .tile *{ max-width:100%; } /* страховка от сжатия */
+    .tile *{ max-width:100%; }
 
     .card{
       width:100%;
@@ -105,7 +138,6 @@
       margin-top:14px;
     }
 
-    /* one-column manifesto everywhere */
     .board{
       display:grid;
       grid-template-columns:1fr;
@@ -132,11 +164,25 @@
 <body>
 <div class="wrap">
 
+  <!-- NAV -->
+  <div class="nav">
+    <div class="brand">
+      <div class="name">Roadline</div>
+      <div class="date">v1 • 14.12.2025</div>
+    </div>
+    <div class="menu">
+      <a class="active" href="index.html">Home</a>
+      <a href="drivers.html">Drivers & Operators</a>
+      <a href="companies.html">Companies</a>
+      <a href="index.html#standards">Standards</a>
+      <a href="index.html#contact">Contact</a>
+    </div>
+  </div>
+
   <!-- HEADER -->
   <div class="topbar">
     <h1>Roadline</h1>
 
-    <!-- Lead -->
     <div class="lead" data-lang="ru">
       <p class="strong">Профессиональный доступ к рынку профессионалов.</p>
       <p>Прямой контакт. Проверка. Профессиональные стандарты.</p>
@@ -154,7 +200,6 @@
       <p>Bezpośredni kontakt. Weryfikacja. Standardy zawodowe.</p>
     </div>
 
-    <!-- Tiles (full width) -->
     <div class="tiles">
       <div class="tile">
         <p class="strong" data-lang="ru">Водители и операторы</p>
@@ -193,8 +238,7 @@
       </div>
     </div>
 
-    <!-- Language switch -->
-    <div class="lang" aria-label="Language switch">
+    <div class="lang">
       <button data-setlang="ru">RU</button>
       <button data-setlang="uk">UA</button>
       <button data-setlang="en">EN</button>
@@ -205,7 +249,7 @@
   <!-- CONTENT -->
   <div class="board">
 
-    <div class="card">
+    <div class="card" id="standards">
       <h2 data-lang="ru">Наша миссия</h2>
       <h2 data-lang="uk">Наша місія</h2>
       <h2 data-lang="en">Our mission</h2>
@@ -216,95 +260,25 @@
       <p class="strong" data-lang="en">Roadline connects professionals, not profiles.</p>
       <p class="strong" data-lang="pl">Roadline łączy profesjonalistów, nie profile.</p>
 
-      <p data-lang="ru">
-        Мы верим, что рынок работает лучше, когда специалисты и компании общаются напрямую,
-        ожидания понятны, а опыт ценится выше количества.
-      </p>
-      <p data-lang="uk">
-        Ми віримо, що ринок працює краще, коли фахівці та компанії спілкуються напряму,
-        очікування зрозумілі, а досвід цінується вище за кількість.
-      </p>
-      <p data-lang="en">
-        We believe the market works best when professionals and companies communicate directly,
-        expectations are clear, and experience matters more than volume.
-      </p>
-      <p data-lang="pl">
-        Wierzymy, że rynek działa najlepiej, gdy profesjonaliści i firmy komunikują się bezpośrednio,
-        oczekiwania są jasne, a doświadczenie liczy się bardziej niż ilość.
-      </p>
-
-      <p data-lang="ru">
-        Наша миссия — вернуть профессиональное доверие через доступ, проверку и уважение с обеих сторон.
-      </p>
-      <p data-lang="uk">
-        Наша місія — повернути професійну довіру через доступ, перевірку та повагу з обох сторін.
-      </p>
-      <p data-lang="en">
-        Our mission is to restore professional trust through access, verification and respect on both sides.
-      </p>
-      <p data-lang="pl">
-        Naszą misją jest przywrócenie zaufania zawodowego poprzez dostęp, weryfikację i szacunek po obu stronach.
-      </p>
+      <p data-lang="ru">Наша миссия — вернуть профессиональное доверие через доступ, проверку и уважение с обеих сторон.</p>
+      <p data-lang="uk">Наша місія — повернути професійну довіру через доступ, перевірку та повагу з обох сторін.</p>
+      <p data-lang="en">Our mission is to restore professional trust through access, verification and respect on both sides.</p>
+      <p data-lang="pl">Naszą misją jest przywrócenie zaufania zawodowego poprzez dostęp, weryfikację i szacunek po obu stronach.</p>
     </div>
 
     <div class="card">
-      <h2 data-lang="ru">Для водителей и операторов</h2>
-      <h2 data-lang="uk">Для водіїв та операторів</h2>
-      <h2 data-lang="en">For drivers & operators</h2>
-      <h2 data-lang="pl">Dla kierowców i operatorów</h2>
+      <h2 data-lang="ru">Дальше по структуре</h2>
+      <h2 data-lang="uk">Далі за структурою</h2>
+      <h2 data-lang="en">Next in structure</h2>
+      <h2 data-lang="pl">Dalej w strukturze</h2>
 
-      <p data-lang="ru">
-        Для профессиональных водителей и операторов техники: грузовики, автобусы, строительная и тяжёлая техника.
-      </p>
-      <p data-lang="uk">
-        Для професійних водіїв та операторів техніки: вантажівки, автобуси, будівельна та важка техніка.
-      </p>
-      <p data-lang="en">
-        For professional drivers and machine operators: trucks, buses, construction and heavy equipment.
-      </p>
-      <p data-lang="pl">
-        Dla zawodowych kierowców i operatorów: ciężarówki, autobusy, maszyny budowlane i ciężki sprzęt.
-      </p>
+      <p data-lang="ru">Страницы уже заложены в меню: Drivers & Operators, Companies, Standards, Contact.</p>
+      <p data-lang="uk">Сторінки вже закладені в меню: Drivers & Operators, Companies, Standards, Contact.</p>
+      <p data-lang="en">Pages are already in the menu: Drivers & Operators, Companies, Standards, Contact.</p>
+      <p data-lang="pl">Strony są już w menu: Drivers & Operators, Companies, Standards, Contact.</p>
     </div>
 
-    <div class="card">
-      <h2 data-lang="ru">Для компаний / работодателей</h2>
-      <h2 data-lang="uk">Для компаній / роботодавців</h2>
-      <h2 data-lang="en">For companies / employers</h2>
-      <h2 data-lang="pl">Dla firm / pracodawców</h2>
-
-      <p data-lang="ru">
-        Для транспортных и строительных компаний, которым нужны проверенные профессиональные водители и операторы.
-      </p>
-      <p data-lang="uk">
-        Для транспортних і будівельних компаній, яким потрібні перевірені професійні водії та оператори.
-      </p>
-      <p data-lang="en">
-        For transport and construction companies looking for verified professional drivers and operators.
-      </p>
-      <p data-lang="pl">
-        Dla firm transportowych i budowlanych, które szukają zweryfikowanych zawodowych kierowców i operatorów.
-      </p>
-    </div>
-
-    <div class="card">
-      <h2 data-lang="ru">Чем Roadline отличается</h2>
-      <h2 data-lang="uk">Чим Roadline відрізняється</h2>
-      <h2 data-lang="en">What makes Roadline different</h2>
-      <h2 data-lang="pl">Czym Roadline się różni</h2>
-
-      <p data-lang="ru">• Никаких job-бордов • Никаких агентств • Никакой массовки • Никаких пустых обещаний</p>
-      <p data-lang="uk">• Жодних job-бордів • Жодних агенцій • Жодної масовки • Жодних порожніх обіцянок</p>
-      <p data-lang="en">• No job boards • No agencies • No mass flow • No empty promises</p>
-      <p data-lang="pl">• Bez tablic ogłoszeń • Bez agencji • Bez masowego przepływu • Bez pustych obietnic</p>
-
-      <p data-lang="ru">Только прямой доступ, профессиональные стандарты и реальный опыт.</p>
-      <p data-lang="uk">Тільки прямий доступ, професійні стандарти та реальний досвід.</p>
-      <p data-lang="en">Only direct access, professional standards and real experience.</p>
-      <p data-lang="pl">Tylko bezpośredni dostęp, standardy zawodowe i realne doświadczenie.</p>
-    </div>
-
-    <div class="card">
+    <div class="card" id="contact">
       <h2 data-lang="ru">Контакт</h2>
       <h2 data-lang="uk">Контакт</h2>
       <h2 data-lang="en">Contact</h2>
