@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Roadline — Drivers & Operators</title>
-  <meta name="description" content="For drivers & operators. Professional access. No agencies.">
+  <title>Roadline — Drivers</title>
+  <meta name="description" content="Roadline for drivers and operators. Direct access. Standards.">
 
   <style>
     :root{ --bg:#0b0c10; --text:#f2f3f5; --muted:#a9afbd; --line:#242a38; }
@@ -34,16 +34,15 @@
       background:rgba(17,19,24,.65);
       backdrop-filter: blur(8px);
       padding:12px 14px;
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:12px;
-      flex-wrap:wrap;
+      display:flex; align-items:center; justify-content:space-between;
+      gap:12px; flex-wrap:wrap;
     }
-    .brand{ display:flex; align-items:baseline; gap:10px; }
+    .brand{ display:flex; flex-direction:column; gap:2px; min-width:220px; }
     .brand .name{ color:var(--text); font-weight:700; }
-    .brand .date{ color:var(--muted); font-size:12px; }
-    .menu{ display:flex; gap:8px; flex-wrap:wrap; }
+    .brand .tagline{ font-size:12px; color:var(--muted); }
+
+    .nav-right{ display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+    .menu{ display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
     .menu a{
       text-decoration:none; color:var(--muted);
       border:1px solid var(--line);
@@ -51,6 +50,17 @@
       background:rgba(17,19,24,.35);
     }
     .menu a.active{ color:var(--text); border-color:#3a4258; }
+
+    .lang-select{
+      border:1px solid var(--line);
+      border-radius:10px;
+      padding:6px 10px;
+      font-size:12px;
+      color:var(--text);
+      background:rgba(17,19,24,.35);
+      outline:none;
+      cursor:pointer;
+    }
 
     .topbar{
       margin-top:12px;
@@ -74,56 +84,108 @@
       color:var(--muted);
       display:flex; justify-content:space-between; flex-wrap:wrap; gap:10px;
     }
+
+    [data-lang]{ display:none; }
+    [data-lang].active{ display:block; }
+    [data-lang-inline]{ display:none; }
+    [data-lang-inline].active{ display:inline; }
   </style>
 </head>
 
 <body>
 <div class="wrap">
 
-  <!-- NAV -->
   <div class="nav">
     <div class="brand">
       <div class="name">Roadline</div>
-      <div class="date">Drivers • 14.12.2025</div>
+      <div class="tagline">
+        <span data-lang-inline="ru" class="active">Профессиональный доступ к рынку профессионалов</span>
+        <span data-lang-inline="uk">Професійний доступ до ринку професіоналів</span>
+        <span data-lang-inline="en">Professional access to the market of professionals</span>
+        <span data-lang-inline="pl">Profesjonalny dostęp do rynku profesjonalistów</span>
+      </div>
     </div>
-    <div class="menu">
-      <a href="index.html">Home</a>
-      <a class="active" href="drivers.html">Drivers & Operators</a>
-      <a href="companies.html">Companies</a>
-      <a href="index.html#standards">Standards</a>
-      <a href="index.html#contact">Contact</a>
+
+    <div class="nav-right">
+      <div class="menu">
+        <a href="index.html">
+          <span data-lang-inline="ru" class="active">Главная</span><span data-lang-inline="uk">Головна</span><span data-lang-inline="en">Home</span><span data-lang-inline="pl">Start</span>
+        </a>
+        <a class="active" href="drivers.html">
+          <span data-lang-inline="ru" class="active">Водители</span><span data-lang-inline="uk">Водії</span><span data-lang-inline="en">Drivers</span><span data-lang-inline="pl">Kierowcy</span>
+        </a>
+        <a href="companies.html">
+          <span data-lang-inline="ru" class="active">Компании</span><span data-lang-inline="uk">Компанії</span><span data-lang-inline="en">Companies</span><span data-lang-inline="pl">Firmy</span>
+        </a>
+        <a href="standards.html">
+          <span data-lang-inline="ru" class="active">Стандарты</span><span data-lang-inline="uk">Стандарти</span><span data-lang-inline="en">Standards</span><span data-lang-inline="pl">Standardy</span>
+        </a>
+        <a href="contact.html">
+          <span data-lang-inline="ru" class="active">Контакт</span><span data-lang-inline="uk">Контакт</span><span data-lang-inline="en">Contact</span><span data-lang-inline="pl">Kontakt</span>
+        </a>
+      </div>
+
+      <select class="lang-select" id="langSelect" aria-label="Language">
+        <option value="ru">RU</option>
+        <option value="uk">UA</option>
+        <option value="en">EN</option>
+        <option value="pl">PL</option>
+      </select>
     </div>
   </div>
 
   <div class="topbar">
-    <h1>Drivers & Operators</h1>
-    <p class="strong">Professional space for people who work with machinery.</p>
-    <p>Transport, heavy equipment, construction machinery. No agencies.</p>
+    <h1 data-lang="ru" class="active">Водители и операторы</h1>
+    <h1 data-lang="uk">Водії та оператори</h1>
+    <h1 data-lang="en">Drivers & Operators</h1>
+    <h1 data-lang="pl">Kierowcy i operatorzy</h1>
+
+    <p data-lang="ru" class="active"><span class="strong">Профессиональная среда</span> для тех, кто работает с техникой.</p>
+    <p data-lang="uk"><span class="strong">Професійне середовище</span> для тих, хто працює з технікою.</p>
+    <p data-lang="en"><span class="strong">A professional space</span> for people who work with machinery.</p>
+    <p data-lang="pl"><span class="strong">Profesjonalna przestrzeń</span> dla osób, które pracują ze sprzętem.</p>
   </div>
 
   <div class="card">
-    <h2>Who this is for</h2>
-    <p class="strong">This page is for professionals, not beginners.</p>
-    <p>Drivers and operators with real experience: trucks, buses, construction and heavy machinery.</p>
+    <h2 data-lang="ru" class="active">Кому это подходит</h2>
+    <h2 data-lang="uk">Кому це підходить</h2>
+    <h2 data-lang="en">Who this is for</h2>
+    <h2 data-lang="pl">Dla kogo to jest</h2>
+
+    <p data-lang="ru" class="active"><span class="strong">Для профессионалов, не для новичков.</span></p>
+    <p data-lang="uk"><span class="strong">Для професіоналів, не для новачків.</span></p>
+    <p data-lang="en"><span class="strong">For professionals, not beginners.</span></p>
+    <p data-lang="pl"><span class="strong">Dla profesjonalistów, nie dla początkujących.</span></p>
+
+    <p data-lang="ru" class="active">Грузовики, автобусы, строительная и тяжёлая техника.</p>
+    <p data-lang="uk">Вантажівки, автобуси, будівельна та важка техніка.</p>
+    <p data-lang="en">Trucks, buses, construction and heavy equipment.</p>
+    <p data-lang="pl">Ciężarówki, autobusy, maszyny budowlane i ciężki sprzęt.</p>
   </div>
 
   <div class="card">
-    <h2>What Roadline gives you</h2>
-    <p>Roadline is not a job board and not an agency. It is a professional environment where companies and specialists communicate directly.</p>
-    <p>No intermediaries. No mass flow. No empty promises.</p>
+    <h2 data-lang="ru" class="active">Что даёт Roadline</h2>
+    <h2 data-lang="uk">Що дає Roadline</h2>
+    <h2 data-lang="en">What Roadline gives you</h2>
+    <h2 data-lang="pl">Co daje Roadline</h2>
+
+    <p data-lang="ru" class="active">Это не job-борд и не агентство. Это прямой контакт между профессионалом и компанией.</p>
+    <p data-lang="uk">Це не job-борд і не агенція. Це прямий контакт між професіоналом і компанією.</p>
+    <p data-lang="en">Not a job board. Not an agency. Direct contact between a professional and a company.</p>
+    <p data-lang="pl">To nie tablica ogłoszeń i nie agencja. Bezpośredni kontakt między profesjonalistą a firmą.</p>
   </div>
 
   <div class="card">
-    <h2>How it works</h2>
-    <p>• You present yourself as a professional</p>
-    <p>• Companies see real experience, not empty profiles</p>
-    <p>• Communication is direct and transparent</p>
-  </div>
+    <h2 data-lang="ru" class="active">Следующий шаг</h2>
+    <h2 data-lang="uk">Наступний крок</h2>
+    <h2 data-lang="en">Next step</h2>
+    <h2 data-lang="pl">Następny krok</h2>
 
-  <div class="card">
-    <h2>Next step</h2>
-    <p class="strong">Write one short message:</p>
-    <p>Who you are • equipment • countries/projects • what you want.</p>
+    <p data-lang="ru" class="active">Напиши одной строкой: кто ты, техника, страны/проекты, что ищешь.</p>
+    <p data-lang="uk">Напиши одним рядком: хто ти, техніка, країни/проєкти, що шукаєш.</p>
+    <p data-lang="en">Write one line: who you are, equipment, countries/projects, what you want.</p>
+    <p data-lang="pl">Napisz jedną linijkę: kim jesteś, sprzęt, kraje/projekty, czego szukasz.</p>
+
     <p class="strong">hello@roadline.pro</p>
   </div>
 
@@ -133,5 +195,46 @@
   </div>
 
 </div>
+
+<script>
+  function setLangUI(lang){
+    document.querySelectorAll('[data-lang]').forEach(el=>{
+      el.classList.toggle('active', el.dataset.lang === lang);
+    });
+    document.querySelectorAll('[data-lang-inline]').forEach(el=>{
+      el.classList.toggle('active', el.dataset.langInline === lang);
+    });
+    document.documentElement.lang = lang;
+    const sel = document.getElementById('langSelect');
+    if(sel) sel.value = lang;
+  }
+
+  function normalizeDetectedLang(raw){
+    const l = (raw || 'en').toLowerCase();
+    if (l.startsWith('pl')) return 'pl';
+    if (l.startsWith('uk')) return 'uk';
+    if (l.startsWith('ru') || l.startsWith('be')) return 'ru';
+    return 'en';
+  }
+
+  function detectLang(){
+    const saved = localStorage.getItem('roadline_lang');
+    if(saved){ setLangUI(saved); return; }
+    const browser = navigator.language || (navigator.languages && navigator.languages[0]) || 'en';
+    setLangUI(normalizeDetectedLang(browser));
+  }
+
+  const langSelect = document.getElementById('langSelect');
+  if(langSelect){
+    langSelect.addEventListener('change', ()=>{
+      const lang = langSelect.value;
+      localStorage.setItem('roadline_lang', lang);
+      setLangUI(lang);
+    });
+  }
+
+  detectLang();
+</script>
+
 </body>
 </html>
