@@ -1,14 +1,288 @@
-<!DOCTYPE html>
-<html>
+<!-- index.html -->
+<!doctype html>
+<html lang="ru">
 <head>
-<meta charset="UTF-8">
-<title>Driver CV Builder</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Roadline CV — Профессиональное резюме водителя</title>
+  <meta name="description" content="Создайте профессиональное резюме водителя C+E для работы в Европе за 3 минуты. Бесплатно. Без регистрации." />
+  <link rel="stylesheet" href="./cv.css" />
 </head>
 
 <body>
+  <!-- subtle background meter -->
+  <div class="bg-meter" aria-hidden="true">
+    <svg viewBox="0 0 600 600">
+      <path class="arcBase" d="M120,420 A220,220 0 1,1 480,420" fill="none" stroke-width="10" />
+      <g class="ticks" fill="none" stroke-width="3"></g>
+      <path id="meterProgress" class="progress glow" d="M120,420 A220,220 0 1,1 480,420" fill="none" stroke-width="12" stroke-linecap="round"
+            stroke-dasharray="1" stroke-dashoffset="1" />
+    </svg>
+  </div>
 
-<h1>Create Driver Resume</h1>
-<p>Roadline Resume Builder</p>
+  <div class="wrap">
+    <!-- NAV (BLOCK) -->
+    <header class="nav card" id="top">
+      <div class="navRow">
+        <div class="brand">
+          <div class="name">Roadline CV</div>
+          <div class="tag">
+            <span data-lang-inline="ru" class="active">Резюме водителя C+E за 3 минуты</span>
+            <span data-lang-inline="uk">Резюме водія C+E за 3 хвилини</span>
+            <span data-lang-inline="en">Driver C+E resume in 3 minutes</span>
+            <span data-lang-inline="pl">CV kierowcy C+E w 3 minuty</span>
+          </div>
+        </div>
 
+        <nav class="menu" aria-label="Menu">
+          <a href="#intro" data-nav="intro" class="active">
+            <span data-lang-inline="ru" class="active">Старт</span>
+            <span data-lang-inline="uk">Старт</span>
+            <span data-lang-inline="en">Start</span>
+            <span data-lang-inline="pl">Start</span>
+          </a>
+          <a href="#how" data-nav="how">
+            <span data-lang-inline="ru" class="active">Как это работает</span>
+            <span data-lang-inline="uk">Як це працює</span>
+            <span data-lang-inline="en">How it works</span>
+            <span data-lang-inline="pl">Jak to działa</span>
+          </a>
+          <a href="#builder" data-nav="builder">
+            <span data-lang-inline="ru" class="active">Создать CV</span>
+            <span data-lang-inline="uk">Створити CV</span>
+            <span data-lang-inline="en">Build CV</span>
+            <span data-lang-inline="pl">Stwórz CV</span>
+          </a>
+          <a href="#result" data-nav="result">
+            <span data-lang-inline="ru" class="active">Результат</span>
+            <span data-lang-inline="uk">Результат</span>
+            <span data-lang-inline="en">Result</span>
+            <span data-lang-inline="pl">Wynik</span>
+          </a>
+
+          <select class="lang" id="langSelect" aria-label="Language">
+            <option value="ru">RU</option>
+            <option value="uk">UA</option>
+            <option value="en">EN</option>
+            <option value="pl">PL</option>
+          </select>
+        </nav>
+      </div>
+    </header>
+
+    <main class="stack" style="margin-top:12px;">
+      <!-- INTRO (BLOCK) -->
+      <section id="intro" class="card section">
+        <div data-lang="ru" class="active">
+          <h1>Профессиональное резюме водителя для работы в Европе</h1>
+          <p style="margin-top:8px;">
+            Сделайте резюме водителя <span class="strong">C+E</span> за <span class="strong">3 минуты</span>.
+            Без регистрации. Без “28 полей”. Только выбор кнопками.
+          </p>
+          <div class="btnRow" style="margin-top:12px;">
+            <button class="btn" id="startBtnRu" type="button">Создать резюме</button>
+            <a class="btn secondary" href="#how">Посмотреть как работает</a>
+          </div>
+          <p class="tiny" style="margin-top:10px;">
+            Данные сохраняются только в вашем браузере. Мы не продаём данные третьим лицам.
+          </p>
+        </div>
+
+        <div data-lang="uk">
+          <h1>Професійне резюме водія для роботи в Європі</h1>
+          <p style="margin-top:8px;">
+            Створіть резюме водія <span class="strong">C+E</span> за <span class="strong">3 хвилини</span>.
+            Без реєстрації. Без “28 полів”. Лише вибір кнопками.
+          </p>
+          <div class="btnRow" style="margin-top:12px;">
+            <button class="btn" id="startBtnUk" type="button">Створити резюме</button>
+            <a class="btn secondary" href="#how">Подивитись як працює</a>
+          </div>
+          <p class="tiny" style="margin-top:10px;">
+            Дані зберігаються лише у вашому браузері. Ми не продаємо дані третім особам.
+          </p>
+        </div>
+
+        <div data-lang="en">
+          <h1>Professional driver resume for Europe</h1>
+          <p style="margin-top:8px;">
+            Build a <span class="strong">C+E</span> driver resume in <span class="strong">3 minutes</span>.
+            No registration. No long forms. Just quick choices.
+          </p>
+          <div class="btnRow" style="margin-top:12px;">
+            <button class="btn" id="startBtnEn" type="button">Build resume</button>
+            <a class="btn secondary" href="#how">See how it works</a>
+          </div>
+          <p class="tiny" style="margin-top:10px;">
+            Data stays in your browser. We don’t sell your data to third parties.
+          </p>
+        </div>
+
+        <div data-lang="pl">
+          <h1>Profesjonalne CV kierowcy do pracy w Europie</h1>
+          <p style="margin-top:8px;">
+            Stwórz CV kierowcy <span class="strong">C+E</span> w <span class="strong">3 minuty</span>.
+            Bez rejestracji. Bez długich formularzy. Tylko wybór.
+          </p>
+          <div class="btnRow" style="margin-top:12px;">
+            <button class="btn" id="startBtnPl" type="button">Stwórz CV</button>
+            <a class="btn secondary" href="#how">Zobacz jak to działa</a>
+          </div>
+          <p class="tiny" style="margin-top:10px;">
+            Dane zostają w Twojej przeglądarce. Nie sprzedajemy danych osobom trzecim.
+          </p>
+        </div>
+      </section>
+
+      <!-- HOW (BLOCK) -->
+      <section id="how" class="card section">
+        <div data-lang="ru" class="active">
+          <h2>Как это работает</h2>
+          <div class="hr"></div>
+          <p><span class="strong">1)</span> Вы отвечаете на 8 коротких вопросов (кнопки/галочки).</p>
+          <p style="margin-top:6px;"><span class="strong">2)</span> Сервис собирает профиль в формате, понятном компании.</p>
+          <p style="margin-top:6px;"><span class="strong">3)</span> Вы получаете готовое резюме на экране и можете поделиться ссылкой.</p>
+          <p class="tiny" style="margin-top:10px;">Сейчас MVP: без аккаунтов и без рассылок. Сначала делаем работающий продукт.</p>
+        </div>
+
+        <div data-lang="uk">
+          <h2>Як це працює</h2>
+          <div class="hr"></div>
+          <p><span class="strong">1)</span> Ви відповідаєте на 8 коротких питань (кнопки/прапорці).</p>
+          <p style="margin-top:6px;"><span class="strong">2)</span> Сервіс формує профіль у форматі, зрозумілому компанії.</p>
+          <p style="margin-top:6px;"><span class="strong">3)</span> Ви отримуєте готове резюме на екрані та можете поділитися посиланням.</p>
+          <p class="tiny" style="margin-top:10px;">Зараз MVP: без акаунтів і без розсилок. Спочатку робимо робочий продукт.</p>
+        </div>
+
+        <div data-lang="en">
+          <h2>How it works</h2>
+          <div class="hr"></div>
+          <p><span class="strong">1)</span> Answer 8 quick questions (buttons/checkboxes).</p>
+          <p style="margin-top:6px;"><span class="strong">2)</span> The builder structures your profile in an employer-friendly format.</p>
+          <p style="margin-top:6px;"><span class="strong">3)</span> You get a clean resume preview and can share the link.</p>
+          <p class="tiny" style="margin-top:10px;">MVP now: no accounts, no distribution. First — working product.</p>
+        </div>
+
+        <div data-lang="pl">
+          <h2>Jak to działa</h2>
+          <div class="hr"></div>
+          <p><span class="strong">1)</span> Odpowiadasz na 8 krótkich pytań (przyciski/checkboxy).</p>
+          <p style="margin-top:6px;"><span class="strong">2)</span> Kreator układa profil w formacie czytelnym dla firmy.</p>
+          <p style="margin-top:6px;"><span class="strong">3)</span> Dostajesz podgląd CV i możesz udostępnić link.</p>
+          <p class="tiny" style="margin-top:10px;">MVP: bez kont i bez wysyłek. Najpierw robimy działający produkt.</p>
+        </div>
+
+        <div class="btnRow" style="margin-top:12px;">
+          <a class="btn" href="#builder">Перейти к созданию</a>
+          <button class="btn secondary" type="button" id="resetAllBtn">Сбросить ответы</button>
+        </div>
+      </section>
+
+      <!-- BUILDER (BLOCK) -->
+      <section id="builder" class="card section">
+        <div class="wizTop">
+          <h2>
+            <span data-lang-inline="ru" class="active">Создать резюме C+E</span>
+            <span data-lang-inline="uk">Створити резюме C+E</span>
+            <span data-lang-inline="en">Build C+E resume</span>
+            <span data-lang-inline="pl">Stwórz CV C+E</span>
+          </h2>
+          <div class="pill" id="stepPill">—</div>
+        </div>
+        <div class="progressBar" style="margin-top:10px;"><div id="stepBar"></div></div>
+
+        <div class="wizard" style="margin-top:12px;">
+          <div id="questionArea"></div>
+
+          <div class="btnRow" style="margin-top:14px;">
+            <button class="btn secondary" id="backBtn" type="button">Назад</button>
+            <button class="btn" id="nextBtn" type="button">Далее</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- RESULT (BLOCK) -->
+      <section id="result" class="card section">
+        <h2>
+          <span data-lang-inline="ru" class="active">Результат</span>
+          <span data-lang-inline="uk">Результат</span>
+          <span data-lang-inline="en">Result</span>
+          <span data-lang-inline="pl">Wynik</span>
+        </h2>
+        <div class="hr"></div>
+
+        <div class="resume" id="resumeBox">
+          <h3 id="resumeTitle">—</h3>
+          <div class="grid" id="resumeGrid"></div>
+        </div>
+
+        <div class="hr"></div>
+
+        <div class="card inner">
+          <div data-lang="ru" class="active">
+            <p class="strong">Поделиться</p>
+            <p class="tiny" style="margin-top:4px;">Отправьте ссылку коллегам. Это лучший бесплатный маркетинг.</p>
+          </div>
+          <div data-lang="uk">
+            <p class="strong">Поділитися</p>
+            <p class="tiny" style="margin-top:4px;">Надішліть посилання колегам. Це найкращий безкоштовний маркетинг.</p>
+          </div>
+          <div data-lang="en">
+            <p class="strong">Share</p>
+            <p class="tiny" style="margin-top:4px;">Send the link to colleagues. Best free marketing.</p>
+          </div>
+          <div data-lang="pl">
+            <p class="strong">Udostępnij</p>
+            <p class="tiny" style="margin-top:4px;">Wyślij link kolegom. Najlepszy darmowy marketing.</p>
+          </div>
+
+          <div class="btnRow" style="margin-top:10px;">
+            <button class="btn secondary" id="copyLinkBtn" type="button">Скопировать ссылку</button>
+            <button class="btn secondary" id="copyTextBtn" type="button">Скопировать текст</button>
+          </div>
+
+          <div class="btnRow" style="margin-top:10px;">
+            <a class="btn secondary" id="tgShare" href="#" target="_blank" rel="noopener">Telegram</a>
+            <a class="btn secondary" id="waShare" href="#" target="_blank" rel="noopener">WhatsApp</a>
+          </div>
+
+          <div class="btnRow" style="margin-top:10px;">
+            <a class="btn secondary" id="fbShare" href="#" target="_blank" rel="noopener">Facebook</a>
+            <button class="btn" id="editBtn" type="button">Редактировать ответы</button>
+          </div>
+
+          <div class="hr"></div>
+
+          <label class="opt static">
+            <input type="checkbox" id="gdpr" />
+            <div>
+              <div class="lbl">
+                <span data-lang-inline="ru" class="active">Согласие на обработку данных</span>
+                <span data-lang-inline="uk">Згода на обробку даних</span>
+                <span data-lang-inline="en">Consent to data processing</span>
+                <span data-lang-inline="pl">Zgoda na przetwarzanie danych</span>
+              </div>
+              <div class="sub">
+                <span data-lang="ru" class="active">Данные используются только для формирования резюме и связи по запросу. Без продажи третьим лицам.</span>
+                <span data-lang="uk">Дані використовуються лише для формування резюме та зв’язку за запитом. Без продажу третім особам.</span>
+                <span data-lang="en">Data is used only to generate the resume and contact you upon request. No selling to third parties.</span>
+                <span data-lang="pl">Dane służą wyłącznie do stworzenia CV i kontaktu na Twoją prośbę. Bez sprzedaży osobom trzecim.</span>
+              </div>
+            </div>
+          </label>
+
+          <p class="tiny" style="margin-top:10px;">MVP: PDF-скачивание добавим следующим шагом. Сейчас — быстрый конструктор + результат.</p>
+        </div>
+      </section>
+
+      <footer class="card footer">
+        <p class="tiny">© Roadline CV. All rights reserved. <span class="dim">|</span> roadline.pro <span class="dim">|</span> v0.1</p>
+      </footer>
+    </main>
+  </div>
+
+  <div class="toast" id="toast">—</div>
+
+  <script src="./cv.js"></script>
 </body>
 </html>
