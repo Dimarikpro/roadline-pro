@@ -54,7 +54,8 @@ function toast(msg){
 ========================= */
 const LS_ANS_KEY = "roadline_cv_answers_v1";
 const SHARE_PARAM = "profile";
-const SHARE_VERSION = 1;
+const SHARE_VERSION = 2;
+const SUPPORTED_SHARE_VERSIONS = new Set([1, SHARE_VERSION]);
 const QUESTION_BANK = [
   {
     id: "workType",
@@ -155,13 +156,13 @@ function decodeProfile(value){
     const binary = atob(padded);
     const bytes = Uint8Array.from(binary, char=>char.charCodeAt(0));
     const data = JSON.parse(new TextDecoder().decode(bytes));
-    if(data.v !== SHARE_VERSION || !data.answers || typeof data.answers !== "object") return null;
-    return sanitizeAnswers(data.answers);
+    if(!SUPPORTED_SHARE_VERSIONS.has(data.v) || !data.answers || typeof data.answers !== "object") return null;
+    return sanitizeProfessionalAnswers(data.answers);
   }catch(e){
     return null;
   }
 }
-function sanitizeAnswers(raw){
+function sanitizeProfessionalAnswers(raw){
   const clean = {};
   QUESTION_BANK.forEach(q=>{
     if(q.type === "single"){
@@ -174,13 +175,22 @@ function sanitizeAnswers(raw){
       if(values.length) clean[q.id] = values;
     }
   });
-  if(typeof raw.contactName === "string") clean.contactName = raw.contactName.trim().slice(0, 100);
-  if(typeof raw.contactPhone === "string") clean.contactPhone = raw.contactPhone.trim().slice(0, 100);
   return clean;
 }
 function loadSharedAnswers(){
-  const encoded = new URL(location.href).searchParams.get(SHARE_PARAM);
-  return encoded ? decodeProfile(encoded) : null;
+  const currentUrl = new URL(location.href);
+  const encoded = currentUrl.searchParams.get(SHARE_PARAM);
+  const answers = encoded ? decodeProfile(encoded) : null;
+  if(!answers) return null;
+
+  // Rewrite legacy or noisy share URLs immediately. This cannot undo an
+  // already-requested legacy URL, but it prevents contacts from remaining in
+  // browser history or being copied again from the address bar.
+  const safeUrl = new URL(currentUrl.origin + currentUrl.pathname);
+  safeUrl.searchParams.set(SHARE_PARAM, encodeProfile(answers));
+  safeUrl.hash = "result";
+  if(safeUrl.href !== currentUrl.href) history.replaceState(null, "", safeUrl);
+  return answers;
 }
 function loadAnswers(){
   try{
@@ -228,10 +238,10 @@ function updateUIStrings(){
   const sharedNotice = document.getElementById("sharedNotice");
   sharedNotice.hidden = !state.isSharedView;
   sharedNotice.textContent = getText(
-    "Вы смотрите резюме по общей ссылке. Оно не сохранено в вашем браузере и не изменит ваши данные.",
-    "Ви переглядаєте резюме за спільним посиланням. Воно не збережене у вашому браузері й не змінить ваші дані.",
-    "You are viewing a shared resume. It is not saved in your browser and will not change your data.",
-    "Oglądasz udostępnione CV. Nie jest zapisane w przeglądarce i nie zmieni Twoich danych."
+    "Вы смотрите публичный профессиональный профиль. Имя и контактные данные владельца не включены. Профиль доступен только для чтения.",
+    "Ви переглядаєте публічний професійний профіль. Ім’я та контактні дані власника не включені. Профіль доступний лише для читання.",
+    "You are viewing a public professional profile. The owner's name and contact details are not included. This profile is read-only.",
+    "Oglądasz publiczny profil zawodowy. Imię i dane kontaktowe właściciela nie są dołączone. Profil jest tylko do odczytu."
   );
 }
 
@@ -463,9 +473,9 @@ function labelsFromMulti(qid, arr){
 
 function renderResume(){
   const name = state.answers.contactName || "—";
-  resumeTitle.textContent = `${name} — DRIVER C+E`;
+  resumeTitle.textContent = state.isSharedView ? "DRIVER C+E" : `${name} — DRIVER C+E`;
 
-  const blocks = getResumeBlocks();
+  const blocks = getResumeBlocks(!state.isSharedView);
 
   resumeGrid.innerHTML = "";
   blocks.forEach(b=>{
@@ -480,7 +490,7 @@ function renderResume(){
   });
 }
 
-function getResumeBlocks(){
+function getResumeBlocks(includeContact = true){
 
   const workType = state.answers.workType ? labelFromOption("workType", state.answers.workType) : "—";
   const exp = state.answers.experience ? labelFromOption("experience", state.answers.experience) : "—";
@@ -491,15 +501,18 @@ function getResumeBlocks(){
   const status = state.answers.statusEU ? labelFromOption("statusEU", state.answers.statusEU) : "—";
   const phone = state.answers.contactPhone || "—";
 
-  return [
+  const blocks = [
     { k: getText("Профиль","Профіль","Profile","Profil"), v: `Driver C+E • ${workType} • ${exp}` },
     { k: getText("Техника / прицеп","Техніка / напівпричіп","Equipment / trailer","Sprzęt / naczepa"), v: trailers.length ? trailers.join(", ") : "—" },
     { k: getText("Маршруты","Маршрути","Routes","Trasy"), v: regions.length ? regions.join(", ") : "—" },
     { k: getText("График","Графік","Rotation","System"), v: schedule },
     { k: getText("Документы","Документи","Documents","Dokumenty"), v: docs.length ? docs.join(", ") : "—" },
-    { k: getText("Статус в ЕС","Статус в ЄС","EU status","Status w UE"), v: status },
-    { k: getText("Контакт","Kontakt","Contact","Kontakt"), v: phone }
+    { k: getText("Статус в ЕС","Статус в ЄС","EU status","Status w UE"), v: status }
   ];
+  if(includeContact){
+    blocks.push({ k: getText("Контакт","Kontakt","Contact","Kontakt"), v: phone });
+  }
+  return blocks;
 }
 
 /* =========================
@@ -510,16 +523,21 @@ const waShare = document.getElementById("waShare");
 const fbShare = document.getElementById("fbShare");
 
 function buildShareText(){
-  return `${buildResumeText()}\n\n${getProfileShareUrl()}`;
+  return `${buildPublicProfileText()}\n\n${getProfileShareUrl()}`;
 }
 function buildResumeText(){
   const name = state.answers.contactName || "—";
   const rows = getResumeBlocks();
   return [`${name} — DRIVER C+E`, ...rows.map(row=>`${row.k}: ${row.v}`)].join("\n");
 }
+function buildPublicProfileText(){
+  const rows = getResumeBlocks(false);
+  return ["DRIVER C+E", ...rows.map(row=>`${row.k}: ${row.v}`)].join("\n");
+}
 function getProfileShareUrl(){
-  const url = new URL(location.href);
-  url.searchParams.set(SHARE_PARAM, encodeProfile(sanitizeAnswers(state.answers)));
+  const currentUrl = new URL(location.href);
+  const url = new URL(currentUrl.origin + currentUrl.pathname);
+  url.searchParams.set(SHARE_PARAM, encodeProfile(sanitizeProfessionalAnswers(state.answers)));
   url.hash = "result";
   return url.toString();
 }
