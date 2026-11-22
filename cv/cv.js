@@ -53,6 +53,9 @@ function toast(msg){
    3) Question bank (EDIT HERE)
 ========================= */
 const LS_ANS_KEY = "roadline_cv_answers_v1";
+const SHARE_PARAM = "profile";
+const SHARE_VERSION = 2;
+const SUPPORTED_SHARE_VERSIONS = new Set([1, SHARE_VERSION]);
 const QUESTION_BANK = [
   {
     id: "workType",
@@ -139,6 +142,56 @@ const QUESTION_BANK = [
 /* =========================
    4) State
 ========================= */
+function encodeProfile(answers){
+  const json = JSON.stringify({ v: SHARE_VERSION, answers });
+  const bytes = new TextEncoder().encode(json);
+  let binary = "";
+  bytes.forEach(byte=> { binary += String.fromCharCode(byte); });
+  return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
+}
+function decodeProfile(value){
+  try{
+    const base64 = value.replace(/-/g, "+").replace(/_/g, "/");
+    const padded = base64.padEnd(Math.ceil(base64.length / 4) * 4, "=");
+    const binary = atob(padded);
+    const bytes = Uint8Array.from(binary, char=>char.charCodeAt(0));
+    const data = JSON.parse(new TextDecoder().decode(bytes));
+    if(!SUPPORTED_SHARE_VERSIONS.has(data.v) || !data.answers || typeof data.answers !== "object") return null;
+    return sanitizeProfessionalAnswers(data.answers);
+  }catch(e){
+    return null;
+  }
+}
+function sanitizeProfessionalAnswers(raw){
+  const clean = {};
+  QUESTION_BANK.forEach(q=>{
+    if(q.type === "single"){
+      const allowed = q.options.some(opt=>opt.value === raw[q.id]);
+      if(allowed) clean[q.id] = raw[q.id];
+    }
+    if(q.type === "multi" && Array.isArray(raw[q.id])){
+      const allowed = new Set(q.options.map(opt=>opt.value));
+      const values = [...new Set(raw[q.id].filter(value=>allowed.has(value)))];
+      if(values.length) clean[q.id] = values;
+    }
+  });
+  return clean;
+}
+function loadSharedAnswers(){
+  const currentUrl = new URL(location.href);
+  const encoded = currentUrl.searchParams.get(SHARE_PARAM);
+  const answers = encoded ? decodeProfile(encoded) : null;
+  if(!answers) return null;
+
+  // Rewrite legacy or noisy share URLs immediately. This cannot undo an
+  // already-requested legacy URL, but it prevents contacts from remaining in
+  // browser history or being copied again from the address bar.
+  const safeUrl = new URL(currentUrl.origin + currentUrl.pathname);
+  safeUrl.searchParams.set(SHARE_PARAM, encodeProfile(answers));
+  safeUrl.hash = "result";
+  if(safeUrl.href !== currentUrl.href) history.replaceState(null, "", safeUrl);
+  return answers;
+}
 function loadAnswers(){
   try{
     const raw = localStorage.getItem(LS_ANS_KEY);
@@ -146,12 +199,15 @@ function loadAnswers(){
   }catch(e){ return {}; }
 }
 function saveAnswers(){
+  if(state.isSharedView) return;
   localStorage.setItem(LS_ANS_KEY, JSON.stringify(state.answers));
 }
+const sharedAnswers = loadSharedAnswers();
 const state = {
   lang: detectLang(),
-  step: 0,
-  answers: loadAnswers()
+  step: sharedAnswers ? QUESTION_BANK.length - 1 : 0,
+  answers: sharedAnswers || loadAnswers(),
+  isSharedView: !!sharedAnswers
 };
 
 /* =========================
@@ -175,7 +231,18 @@ function updateUIStrings(){
   document.getElementById("resetAllBtn").textContent = getText("Сбросить ответы","Скинути відповіді","Reset answers","Resetuj odpowiedzi");
   document.getElementById("copyLinkBtn").textContent = getText("Скопировать ссылку","Скопіювати посилання","Copy link","Kopiuj link");
   document.getElementById("copyTextBtn").textContent = getText("Скопировать текст","Скопіювати текст","Copy text","Kopiuj tekst");
-  document.getElementById("editBtn").textContent = getText("Редактировать ответы","Редагувати відповіді","Edit answers","Edytuj odpowiedzi");
+  document.getElementById("resetAllBtn").disabled = state.isSharedView;
+  document.getElementById("editBtn").textContent = state.isSharedView
+    ? getText("Создать своё резюме","Створити своє резюме","Build my resume","Stwórz moje CV")
+    : getText("Редактировать ответы","Редагувати відповіді","Edit answers","Edytuj odpowiedzi");
+  const sharedNotice = document.getElementById("sharedNotice");
+  sharedNotice.hidden = !state.isSharedView;
+  sharedNotice.textContent = getText(
+    "Вы смотрите публичный профессиональный профиль. Имя и контактные данные владельца не включены. Профиль доступен только для чтения.",
+    "Ви переглядаєте публічний професійний профіль. Ім’я та контактні дані власника не включені. Профіль доступний лише для читання.",
+    "You are viewing a public professional profile. The owner's name and contact details are not included. This profile is read-only.",
+    "Oglądasz publiczny profil zawodowy. Imię i dane kontaktowe właściciela nie są dołączone. Profil jest tylko do odczytu."
+  );
 }
 
 /* =========================
@@ -216,6 +283,7 @@ function renderQuestion(){
       input.type = (q.type === "multi") ? "checkbox" : "radio";
       input.name = q.id;
       input.value = opt.value;
+      input.disabled = state.isSharedView;
 
       if(q.type === "multi"){
         input.checked = Array.isArray(current) && current.includes(opt.value);
@@ -240,6 +308,7 @@ function renderQuestion(){
       row.appendChild(textBox);
 
       row.addEventListener("click", (e)=>{
+        if(state.isSharedView) return;
         if(e.target.tagName.toLowerCase() !== "input"){
           if(q.type !== "multi") input.checked = true;
           else input.checked = !input.checked;
@@ -273,11 +342,13 @@ function renderQuestion(){
     name.className = "input";
     name.placeholder = getText("Имя","Ім’я","Name","Imię");
     name.value = state.answers.contactName || "";
+    name.disabled = state.isSharedView;
 
     const phone = document.createElement("input");
     phone.className = "input";
     phone.placeholder = getText("Телефон / WhatsApp / Telegram","Телефон / WhatsApp / Telegram","Phone / WhatsApp / Telegram","Telefon / WhatsApp / Telegram");
     phone.value = state.answers.contactPhone || "";
+    phone.disabled = state.isSharedView;
 
     name.addEventListener("input", ()=>{
       state.answers.contactName = name.value.trim();
@@ -294,12 +365,16 @@ function renderQuestion(){
   }
 
   const backBtn = document.getElementById("backBtn");
-  backBtn.disabled = state.step === 0;
-  backBtn.style.opacity = state.step === 0 ? .55 : 1;
+  const nextBtn = document.getElementById("nextBtn");
+  backBtn.disabled = state.isSharedView || state.step === 0;
+  nextBtn.disabled = state.isSharedView;
+  backBtn.style.opacity = backBtn.disabled ? .55 : 1;
 }
 
 function validateStep(){
-  const q = QUESTION_BANK[state.step];
+  return validateQuestion(QUESTION_BANK[state.step]);
+}
+function validateQuestion(q){
   if(q.type === "single") return !!state.answers[q.id];
   if(q.type === "multi") return Array.isArray(state.answers[q.id]) && state.answers[q.id].length > 0;
   if(q.type === "contact"){
@@ -307,6 +382,19 @@ function validateStep(){
            (state.answers.contactPhone && state.answers.contactPhone.length >= 6);
   }
   return true;
+}
+
+function isProfileComplete(){
+  return QUESTION_BANK.every(validateQuestion);
+}
+
+function goToFirstIncompleteStep(){
+  const index = QUESTION_BANK.findIndex(q=>!validateQuestion(q));
+  if(index >= 0){
+    state.step = index;
+    renderQuestion();
+    scrollIntoViewSmooth("#builder");
+  }
 }
 
 document.getElementById("nextBtn").addEventListener("click", ()=>{
@@ -348,7 +436,22 @@ document.getElementById("resetAllBtn").addEventListener("click", resetAll);
     el.addEventListener("click", ()=> scrollIntoViewSmooth("#builder"));
   }
 });
-document.getElementById("editBtn").addEventListener("click", ()=> scrollIntoViewSmooth("#builder"));
+document.getElementById("editBtn").addEventListener("click", ()=>{
+  if(state.isSharedView){
+    state.answers = loadAnswers();
+    state.step = 0;
+    state.isSharedView = false;
+    const url = new URL(location.href);
+    url.searchParams.delete(SHARE_PARAM);
+    url.hash = "builder";
+    history.replaceState(null, "", url);
+    updateUIStrings();
+    renderQuestion();
+    renderResume();
+    updateShareLinks();
+  }
+  scrollIntoViewSmooth("#builder");
+});
 
 /* =========================
    8) Resume preview
@@ -370,7 +473,24 @@ function labelsFromMulti(qid, arr){
 
 function renderResume(){
   const name = state.answers.contactName || "—";
-  resumeTitle.textContent = `${name} — DRIVER C+E`;
+  resumeTitle.textContent = state.isSharedView ? "DRIVER C+E" : `${name} — DRIVER C+E`;
+
+  const blocks = getResumeBlocks(!state.isSharedView);
+
+  resumeGrid.innerHTML = "";
+  blocks.forEach(b=>{
+    const kv = document.createElement("div");
+    kv.className = "kv";
+    const k = document.createElement("div");
+    k.className = "k"; k.textContent = b.k;
+    const v = document.createElement("div");
+    v.className = "v"; v.textContent = b.v;
+    kv.appendChild(k); kv.appendChild(v);
+    resumeGrid.appendChild(kv);
+  });
+}
+
+function getResumeBlocks(includeContact = true){
 
   const workType = state.answers.workType ? labelFromOption("workType", state.answers.workType) : "—";
   const exp = state.answers.experience ? labelFromOption("experience", state.answers.experience) : "—";
@@ -387,21 +507,12 @@ function renderResume(){
     { k: getText("Маршруты","Маршрути","Routes","Trasy"), v: regions.length ? regions.join(", ") : "—" },
     { k: getText("График","Графік","Rotation","System"), v: schedule },
     { k: getText("Документы","Документи","Documents","Dokumenty"), v: docs.length ? docs.join(", ") : "—" },
-    { k: getText("Статус в ЕС","Статус в ЄС","EU status","Status w UE"), v: status },
-    { k: getText("Контакт","Kontakt","Contact","Kontakt"), v: phone }
+    { k: getText("Статус в ЕС","Статус в ЄС","EU status","Status w UE"), v: status }
   ];
-
-  resumeGrid.innerHTML = "";
-  blocks.forEach(b=>{
-    const kv = document.createElement("div");
-    kv.className = "kv";
-    const k = document.createElement("div");
-    k.className = "k"; k.textContent = b.k;
-    const v = document.createElement("div");
-    v.className = "v"; v.textContent = b.v;
-    kv.appendChild(k); kv.appendChild(v);
-    resumeGrid.appendChild(kv);
-  });
+  if(includeContact){
+    blocks.push({ k: getText("Контакт","Kontakt","Contact","Kontakt"), v: phone });
+  }
+  return blocks;
 }
 
 /* =========================
@@ -412,16 +523,32 @@ const waShare = document.getElementById("waShare");
 const fbShare = document.getElementById("fbShare");
 
 function buildShareText(){
-  const url = location.href.split("#")[0] + "#builder";
-  return getText(
-    `Я сделал профессиональное резюме водителя C+E за 3 минуты. Бесплатно. Без регистрации.\n\nСделай себе тоже: ${url}`,
-    `Я зробив професійне резюме водія C+E за 3 хвилини. Безкоштовно. Без реєстрації.\n\nЗроби собі теж: ${url}`,
-    `I built a professional C+E driver resume in 3 minutes. Free. No registration.\n\nTry it: ${url}`,
-    `Zrobiłem profesjonalne CV kierowcy C+E w 3 minuty. Za darmo. Bez rejestracji.\n\nSprawdź: ${url}`
-  );
+  return `${buildPublicProfileText()}\n\n${getProfileShareUrl()}`;
+}
+function buildResumeText(){
+  const name = state.answers.contactName || "—";
+  const rows = getResumeBlocks();
+  return [`${name} — DRIVER C+E`, ...rows.map(row=>`${row.k}: ${row.v}`)].join("\n");
+}
+function buildPublicProfileText(){
+  const rows = getResumeBlocks(false);
+  return ["DRIVER C+E", ...rows.map(row=>`${row.k}: ${row.v}`)].join("\n");
+}
+function getProfileShareUrl(){
+  const currentUrl = new URL(location.href);
+  const url = new URL(currentUrl.origin + currentUrl.pathname);
+  url.searchParams.set(SHARE_PARAM, encodeProfile(sanitizeProfessionalAnswers(state.answers)));
+  url.hash = "result";
+  return url.toString();
+}
+function ensureProfileReady(){
+  if(isProfileComplete()) return true;
+  toast(getText("Сначала заполните все шаги резюме","Спочатку заповніть усі кроки резюме","Complete all resume steps first","Najpierw uzupełnij wszystkie kroki CV"));
+  goToFirstIncompleteStep();
+  return false;
 }
 function updateShareLinks(){
-  const url = location.href.split("#")[0] + "#builder";
+  const url = getProfileShareUrl();
   const text = encodeURIComponent(buildShareText());
   tgShare.href = `https://t.me/share/url?url=${encodeURIComponent(url)}&text=${text}`;
   waShare.href = `https://wa.me/?text=${text}`;
@@ -429,7 +556,8 @@ function updateShareLinks(){
 }
 
 document.getElementById("copyLinkBtn").addEventListener("click", async ()=>{
-  const url = location.href.split("#")[0] + "#builder";
+  if(!ensureProfileReady()) return;
+  const url = getProfileShareUrl();
   try{
     await navigator.clipboard.writeText(url);
     toast(getText("Ссылка скопирована","Посилання скопійовано","Link copied","Link skopiowany"));
@@ -438,12 +566,19 @@ document.getElementById("copyLinkBtn").addEventListener("click", async ()=>{
   }
 });
 document.getElementById("copyTextBtn").addEventListener("click", async ()=>{
+  if(!ensureProfileReady()) return;
   try{
-    await navigator.clipboard.writeText(buildShareText());
+    await navigator.clipboard.writeText(buildResumeText());
     toast(getText("Текст скопирован","Текст скопійовано","Text copied","Tekst skopiowany"));
   }catch(e){
     toast(getText("Не удалось скопировать","Не вдалося скopiować","Copy failed","Nie udało się skopiować"));
   }
+});
+
+[tgShare, waShare, fbShare].forEach(link=>{
+  link.addEventListener("click", event=>{
+    if(!ensureProfileReady()) event.preventDefault();
+  });
 });
 
 /* =========================
