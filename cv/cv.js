@@ -53,6 +53,8 @@ function toast(msg){
    3) Question bank (EDIT HERE)
 ========================= */
 const LS_ANS_KEY = "roadline_cv_answers_v1";
+const SHARE_PARAM = "profile";
+const SHARE_VERSION = 1;
 const QUESTION_BANK = [
   {
     id: "workType",
@@ -139,6 +141,47 @@ const QUESTION_BANK = [
 /* =========================
    4) State
 ========================= */
+function encodeProfile(answers){
+  const json = JSON.stringify({ v: SHARE_VERSION, answers });
+  const bytes = new TextEncoder().encode(json);
+  let binary = "";
+  bytes.forEach(byte=> { binary += String.fromCharCode(byte); });
+  return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
+}
+function decodeProfile(value){
+  try{
+    const base64 = value.replace(/-/g, "+").replace(/_/g, "/");
+    const padded = base64.padEnd(Math.ceil(base64.length / 4) * 4, "=");
+    const binary = atob(padded);
+    const bytes = Uint8Array.from(binary, char=>char.charCodeAt(0));
+    const data = JSON.parse(new TextDecoder().decode(bytes));
+    if(data.v !== SHARE_VERSION || !data.answers || typeof data.answers !== "object") return null;
+    return sanitizeAnswers(data.answers);
+  }catch(e){
+    return null;
+  }
+}
+function sanitizeAnswers(raw){
+  const clean = {};
+  QUESTION_BANK.forEach(q=>{
+    if(q.type === "single"){
+      const allowed = q.options.some(opt=>opt.value === raw[q.id]);
+      if(allowed) clean[q.id] = raw[q.id];
+    }
+    if(q.type === "multi" && Array.isArray(raw[q.id])){
+      const allowed = new Set(q.options.map(opt=>opt.value));
+      const values = [...new Set(raw[q.id].filter(value=>allowed.has(value)))];
+      if(values.length) clean[q.id] = values;
+    }
+  });
+  if(typeof raw.contactName === "string") clean.contactName = raw.contactName.trim().slice(0, 100);
+  if(typeof raw.contactPhone === "string") clean.contactPhone = raw.contactPhone.trim().slice(0, 100);
+  return clean;
+}
+function loadSharedAnswers(){
+  const encoded = new URL(location.href).searchParams.get(SHARE_PARAM);
+  return encoded ? decodeProfile(encoded) : null;
+}
 function loadAnswers(){
   try{
     const raw = localStorage.getItem(LS_ANS_KEY);
@@ -146,12 +189,15 @@ function loadAnswers(){
   }catch(e){ return {}; }
 }
 function saveAnswers(){
+  if(state.isSharedView) return;
   localStorage.setItem(LS_ANS_KEY, JSON.stringify(state.answers));
 }
+const sharedAnswers = loadSharedAnswers();
 const state = {
   lang: detectLang(),
-  step: 0,
-  answers: loadAnswers()
+  step: sharedAnswers ? QUESTION_BANK.length - 1 : 0,
+  answers: sharedAnswers || loadAnswers(),
+  isSharedView: !!sharedAnswers
 };
 
 /* =========================
@@ -175,7 +221,18 @@ function updateUIStrings(){
   document.getElementById("resetAllBtn").textContent = getText("Сбросить ответы","Скинути відповіді","Reset answers","Resetuj odpowiedzi");
   document.getElementById("copyLinkBtn").textContent = getText("Скопировать ссылку","Скопіювати посилання","Copy link","Kopiuj link");
   document.getElementById("copyTextBtn").textContent = getText("Скопировать текст","Скопіювати текст","Copy text","Kopiuj tekst");
-  document.getElementById("editBtn").textContent = getText("Редактировать ответы","Редагувати відповіді","Edit answers","Edytuj odpowiedzi");
+  document.getElementById("resetAllBtn").disabled = state.isSharedView;
+  document.getElementById("editBtn").textContent = state.isSharedView
+    ? getText("Создать своё резюме","Створити своє резюме","Build my resume","Stwórz moje CV")
+    : getText("Редактировать ответы","Редагувати відповіді","Edit answers","Edytuj odpowiedzi");
+  const sharedNotice = document.getElementById("sharedNotice");
+  sharedNotice.hidden = !state.isSharedView;
+  sharedNotice.textContent = getText(
+    "Вы смотрите резюме по общей ссылке. Оно не сохранено в вашем браузере и не изменит ваши данные.",
+    "Ви переглядаєте резюме за спільним посиланням. Воно не збережене у вашому браузері й не змінить ваші дані.",
+    "You are viewing a shared resume. It is not saved in your browser and will not change your data.",
+    "Oglądasz udostępnione CV. Nie jest zapisane w przeglądarce i nie zmieni Twoich danych."
+  );
 }
 
 /* =========================
@@ -216,6 +273,7 @@ function renderQuestion(){
       input.type = (q.type === "multi") ? "checkbox" : "radio";
       input.name = q.id;
       input.value = opt.value;
+      input.disabled = state.isSharedView;
 
       if(q.type === "multi"){
         input.checked = Array.isArray(current) && current.includes(opt.value);
@@ -240,6 +298,7 @@ function renderQuestion(){
       row.appendChild(textBox);
 
       row.addEventListener("click", (e)=>{
+        if(state.isSharedView) return;
         if(e.target.tagName.toLowerCase() !== "input"){
           if(q.type !== "multi") input.checked = true;
           else input.checked = !input.checked;
@@ -273,11 +332,13 @@ function renderQuestion(){
     name.className = "input";
     name.placeholder = getText("Имя","Ім’я","Name","Imię");
     name.value = state.answers.contactName || "";
+    name.disabled = state.isSharedView;
 
     const phone = document.createElement("input");
     phone.className = "input";
     phone.placeholder = getText("Телефон / WhatsApp / Telegram","Телефон / WhatsApp / Telegram","Phone / WhatsApp / Telegram","Telefon / WhatsApp / Telegram");
     phone.value = state.answers.contactPhone || "";
+    phone.disabled = state.isSharedView;
 
     name.addEventListener("input", ()=>{
       state.answers.contactName = name.value.trim();
@@ -294,12 +355,16 @@ function renderQuestion(){
   }
 
   const backBtn = document.getElementById("backBtn");
-  backBtn.disabled = state.step === 0;
-  backBtn.style.opacity = state.step === 0 ? .55 : 1;
+  const nextBtn = document.getElementById("nextBtn");
+  backBtn.disabled = state.isSharedView || state.step === 0;
+  nextBtn.disabled = state.isSharedView;
+  backBtn.style.opacity = backBtn.disabled ? .55 : 1;
 }
 
 function validateStep(){
-  const q = QUESTION_BANK[state.step];
+  return validateQuestion(QUESTION_BANK[state.step]);
+}
+function validateQuestion(q){
   if(q.type === "single") return !!state.answers[q.id];
   if(q.type === "multi") return Array.isArray(state.answers[q.id]) && state.answers[q.id].length > 0;
   if(q.type === "contact"){
@@ -307,6 +372,19 @@ function validateStep(){
            (state.answers.contactPhone && state.answers.contactPhone.length >= 6);
   }
   return true;
+}
+
+function isProfileComplete(){
+  return QUESTION_BANK.every(validateQuestion);
+}
+
+function goToFirstIncompleteStep(){
+  const index = QUESTION_BANK.findIndex(q=>!validateQuestion(q));
+  if(index >= 0){
+    state.step = index;
+    renderQuestion();
+    scrollIntoViewSmooth("#builder");
+  }
 }
 
 document.getElementById("nextBtn").addEventListener("click", ()=>{
@@ -348,7 +426,22 @@ document.getElementById("resetAllBtn").addEventListener("click", resetAll);
     el.addEventListener("click", ()=> scrollIntoViewSmooth("#builder"));
   }
 });
-document.getElementById("editBtn").addEventListener("click", ()=> scrollIntoViewSmooth("#builder"));
+document.getElementById("editBtn").addEventListener("click", ()=>{
+  if(state.isSharedView){
+    state.answers = loadAnswers();
+    state.step = 0;
+    state.isSharedView = false;
+    const url = new URL(location.href);
+    url.searchParams.delete(SHARE_PARAM);
+    url.hash = "builder";
+    history.replaceState(null, "", url);
+    updateUIStrings();
+    renderQuestion();
+    renderResume();
+    updateShareLinks();
+  }
+  scrollIntoViewSmooth("#builder");
+});
 
 /* =========================
    8) Resume preview
@@ -372,24 +465,7 @@ function renderResume(){
   const name = state.answers.contactName || "—";
   resumeTitle.textContent = `${name} — DRIVER C+E`;
 
-  const workType = state.answers.workType ? labelFromOption("workType", state.answers.workType) : "—";
-  const exp = state.answers.experience ? labelFromOption("experience", state.answers.experience) : "—";
-  const trailers = labelsFromMulti("trailers", state.answers.trailers);
-  const regions = labelsFromMulti("regions", state.answers.regions);
-  const schedule = state.answers.schedule ? labelFromOption("schedule", state.answers.schedule) : "—";
-  const docs = labelsFromMulti("documents", state.answers.documents);
-  const status = state.answers.statusEU ? labelFromOption("statusEU", state.answers.statusEU) : "—";
-  const phone = state.answers.contactPhone || "—";
-
-  const blocks = [
-    { k: getText("Профиль","Профіль","Profile","Profil"), v: `Driver C+E • ${workType} • ${exp}` },
-    { k: getText("Техника / прицеп","Техніка / напівпричіп","Equipment / trailer","Sprzęt / naczepa"), v: trailers.length ? trailers.join(", ") : "—" },
-    { k: getText("Маршруты","Маршрути","Routes","Trasy"), v: regions.length ? regions.join(", ") : "—" },
-    { k: getText("График","Графік","Rotation","System"), v: schedule },
-    { k: getText("Документы","Документи","Documents","Dokumenty"), v: docs.length ? docs.join(", ") : "—" },
-    { k: getText("Статус в ЕС","Статус в ЄС","EU status","Status w UE"), v: status },
-    { k: getText("Контакт","Kontakt","Contact","Kontakt"), v: phone }
-  ];
+  const blocks = getResumeBlocks();
 
   resumeGrid.innerHTML = "";
   blocks.forEach(b=>{
@@ -404,6 +480,28 @@ function renderResume(){
   });
 }
 
+function getResumeBlocks(){
+
+  const workType = state.answers.workType ? labelFromOption("workType", state.answers.workType) : "—";
+  const exp = state.answers.experience ? labelFromOption("experience", state.answers.experience) : "—";
+  const trailers = labelsFromMulti("trailers", state.answers.trailers);
+  const regions = labelsFromMulti("regions", state.answers.regions);
+  const schedule = state.answers.schedule ? labelFromOption("schedule", state.answers.schedule) : "—";
+  const docs = labelsFromMulti("documents", state.answers.documents);
+  const status = state.answers.statusEU ? labelFromOption("statusEU", state.answers.statusEU) : "—";
+  const phone = state.answers.contactPhone || "—";
+
+  return [
+    { k: getText("Профиль","Профіль","Profile","Profil"), v: `Driver C+E • ${workType} • ${exp}` },
+    { k: getText("Техника / прицеп","Техніка / напівпричіп","Equipment / trailer","Sprzęt / naczepa"), v: trailers.length ? trailers.join(", ") : "—" },
+    { k: getText("Маршруты","Маршрути","Routes","Trasy"), v: regions.length ? regions.join(", ") : "—" },
+    { k: getText("График","Графік","Rotation","System"), v: schedule },
+    { k: getText("Документы","Документи","Documents","Dokumenty"), v: docs.length ? docs.join(", ") : "—" },
+    { k: getText("Статус в ЕС","Статус в ЄС","EU status","Status w UE"), v: status },
+    { k: getText("Контакт","Kontakt","Contact","Kontakt"), v: phone }
+  ];
+}
+
 /* =========================
    9) Sharing
 ========================= */
@@ -412,16 +510,27 @@ const waShare = document.getElementById("waShare");
 const fbShare = document.getElementById("fbShare");
 
 function buildShareText(){
-  const url = location.href.split("#")[0] + "#builder";
-  return getText(
-    `Я сделал профессиональное резюме водителя C+E за 3 минуты. Бесплатно. Без регистрации.\n\nСделай себе тоже: ${url}`,
-    `Я зробив професійне резюме водія C+E за 3 хвилини. Безкоштовно. Без реєстрації.\n\nЗроби собі теж: ${url}`,
-    `I built a professional C+E driver resume in 3 minutes. Free. No registration.\n\nTry it: ${url}`,
-    `Zrobiłem profesjonalne CV kierowcy C+E w 3 minuty. Za darmo. Bez rejestracji.\n\nSprawdź: ${url}`
-  );
+  return `${buildResumeText()}\n\n${getProfileShareUrl()}`;
+}
+function buildResumeText(){
+  const name = state.answers.contactName || "—";
+  const rows = getResumeBlocks();
+  return [`${name} — DRIVER C+E`, ...rows.map(row=>`${row.k}: ${row.v}`)].join("\n");
+}
+function getProfileShareUrl(){
+  const url = new URL(location.href);
+  url.searchParams.set(SHARE_PARAM, encodeProfile(sanitizeAnswers(state.answers)));
+  url.hash = "result";
+  return url.toString();
+}
+function ensureProfileReady(){
+  if(isProfileComplete()) return true;
+  toast(getText("Сначала заполните все шаги резюме","Спочатку заповніть усі кроки резюме","Complete all resume steps first","Najpierw uzupełnij wszystkie kroki CV"));
+  goToFirstIncompleteStep();
+  return false;
 }
 function updateShareLinks(){
-  const url = location.href.split("#")[0] + "#builder";
+  const url = getProfileShareUrl();
   const text = encodeURIComponent(buildShareText());
   tgShare.href = `https://t.me/share/url?url=${encodeURIComponent(url)}&text=${text}`;
   waShare.href = `https://wa.me/?text=${text}`;
@@ -429,7 +538,8 @@ function updateShareLinks(){
 }
 
 document.getElementById("copyLinkBtn").addEventListener("click", async ()=>{
-  const url = location.href.split("#")[0] + "#builder";
+  if(!ensureProfileReady()) return;
+  const url = getProfileShareUrl();
   try{
     await navigator.clipboard.writeText(url);
     toast(getText("Ссылка скопирована","Посилання скопійовано","Link copied","Link skopiowany"));
@@ -438,12 +548,19 @@ document.getElementById("copyLinkBtn").addEventListener("click", async ()=>{
   }
 });
 document.getElementById("copyTextBtn").addEventListener("click", async ()=>{
+  if(!ensureProfileReady()) return;
   try{
-    await navigator.clipboard.writeText(buildShareText());
+    await navigator.clipboard.writeText(buildResumeText());
     toast(getText("Текст скопирован","Текст скопійовано","Text copied","Tekst skopiowany"));
   }catch(e){
     toast(getText("Не удалось скопировать","Не вдалося скopiować","Copy failed","Nie udało się skopiować"));
   }
+});
+
+[tgShare, waShare, fbShare].forEach(link=>{
+  link.addEventListener("click", event=>{
+    if(!ensureProfileReady()) event.preventDefault();
+  });
 });
 
 /* =========================

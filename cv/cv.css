@@ -163,6 +163,12 @@ p{ margin:0; font-size:14px; line-height:1.55; color:var(--muted); }
 }
 .btn:hover{ transform: translateY(-1px); background: rgba(26,30,46,.75); }
 .btn:active{ transform: translateY(0px); }
+.btn:disabled,
+.btn[aria-disabled="true"]{
+  opacity:.5;
+  cursor:not-allowed;
+  transform:none;
+}
 .btn.secondary{
   border-color: var(--line);
   background: rgba(18,20,28,.35);
@@ -257,6 +263,16 @@ p{ margin:0; font-size:14px; line-height:1.55; color:var(--muted); }
   background: rgba(10,11,16,.35);
   padding: 14px;
   overflow:hidden;
+}
+.sharedNotice{
+  margin-bottom:12px;
+  border:1px solid var(--line2);
+  border-radius:14px;
+  background:rgba(22,26,38,.55);
+  padding:10px 12px;
+  color:var(--muted);
+  font-size:12px;
+  line-height:1.5;
 }
 .resume h3{ margin:0 0 8px; font-size:14px; letter-spacing:.2px; }
 .resume .grid{ display:grid; grid-template-columns:1fr; gap:10px; }
