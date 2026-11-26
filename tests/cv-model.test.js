@@ -21,6 +21,7 @@ function completeProfile(){
   profile.preferences.baseCity = "Poznań";
   profile.preferences.routeTypes = ["international"];
   profile.preferences.routeCountries = ["DE", "NL"];
+  profile.preferences.routeRegions = ["benelux"];
   profile.preferences.rotation = "2_2";
   profile.preferences.homeTime = "rotation";
   profile.preferences.shifts = {day:"accepted",night:"excluded",weekends:"negotiable"};
@@ -30,7 +31,7 @@ function completeProfile(){
   return profile;
 }
 
-test("migrates v1 without inferring work rights, overnights, ADR validity or container subtype", ()=>{
+test("migrates every v1 field without inferring current work rights, overnights, ADR validity or container subtype", ()=>{
   const legacy = {
     workType:"intl",
     experience:"1-3",
@@ -54,15 +55,56 @@ test("migrates v1 without inferring work rights, overnights, ADR validity or con
     {code:"sea_container",level:"unknown"},
     {code:"tanker",level:"unknown"}
   ]);
+  assert.deepEqual(migrated.preferences.routeCountries, ["PL", "DE"]);
+  assert.deepEqual(migrated.preferences.routeRegions, ["europe"]);
   assert.equal(migrated.preferences.overnights, "");
   assert.deepEqual(migrated.preferences.shifts, {day:"",night:"",weekends:""});
   assert.equal("statusEU" in migrated, false);
+  assert.deepEqual(migrated.migration, {
+    source:"roadline_cv_answers_v1",
+    legacyAnswers:{
+      workType:"intl",
+      experience:"1-3",
+      trailers:["container", "tanker"],
+      regions:["PL", "DE", "EU"],
+      schedule:"3/1",
+      documents:["code95", "card", "adr"],
+      statusEU:"euCitizen"
+    }
+  });
+});
+
+test("migrates all legacy region choices into active v2 route fields", ()=>{
+  const migrated = model.migrateLegacyAnswers({
+    regions:["PL", "DE", "FR", "BENELUX", "SCAN", "EU"]
+  });
+  assert.deepEqual(migrated.preferences.routeCountries, ["PL", "DE", "FR"]);
+  assert.deepEqual(migrated.preferences.routeRegions, ["benelux", "scandinavia", "europe"]);
+});
+
+test("repairs profiles already migrated by an earlier v2 build without overwriting current answers", ()=>{
+  const previousV2 = completeProfile();
+  previousV2.preferences.routeRegions = [];
+  previousV2.preferences.rotation = "4_1";
+  const restored = model.backfillLegacyMigration(previousV2, {
+    workType:"local",
+    experience:"5+",
+    regions:["BENELUX", "SCAN"],
+    schedule:"2/2",
+    statusEU:"karta"
+  });
+
+  assert.deepEqual(restored.preferences.routeRegions, ["benelux", "scandinavia"]);
+  assert.equal(restored.preferences.rotation, "4_1");
+  assert.equal(restored.experience.ceRange, "1_2y");
+  assert.equal(restored.migration.legacyAnswers.statusEU, "karta");
 });
 
 test("public allowlist excludes private identity and employment history", ()=>{
   const profile = completeProfile();
   profile.privateIdentity = {cvName:"Private Name",contact:{type:"email",value:"private@example.com",bestTime:"18:00"}};
   profile.experience.employmentHistory = [{employer:"Secret Employer",role:"Driver",startMonth:"2024-01",endMonth:"2025-02",summary:"Private route"}];
+  profile.migration = {source:"roadline_cv_answers_v1",legacyAnswers:{statusEU:"visa",documents:["adr"]}};
   profile.passportNumber = "ABC123";
 
   const publicProfile = model.buildPublicProfile(profile, {today:"2026-11-26"});
@@ -71,6 +113,7 @@ test("public allowlist excludes private identity and employment history", ()=>{
   assert.equal(serialized.includes("private@example.com"), false);
   assert.equal(serialized.includes("Secret Employer"), false);
   assert.equal(serialized.includes("ABC123"), false);
+  assert.equal(serialized.includes("visa"), false);
   assert.equal(publicProfile.displayName, "Northbound driver");
   assert.deepEqual(publicProfile.experience.equipment, [{code:"tanker",level:"learning"}]);
   assert.deepEqual(publicProfile.experience.cargo, [{code:"food_liquid",level:"assisted"}]);
@@ -81,6 +124,10 @@ test("contact-like public display names fail closed", ()=>{
   profile.publicIdentity.displayName = "Call +48 600 123 456";
   assert.equal(model.buildPublicProfile(profile).displayName, "Driver C+E");
   profile.publicIdentity.displayName = "driver@example.com";
+  assert.equal(model.buildPublicProfile(profile).displayName, "Driver C+E");
+  profile.publicIdentity.displayName = "https://t.me/northbound";
+  assert.equal(model.buildPublicProfile(profile).displayName, "Driver C+E");
+  profile.publicIdentity.displayName = "WhatsApp Northbound";
   assert.equal(model.buildPublicProfile(profile).displayName, "Driver C+E");
 });
 
@@ -112,6 +159,26 @@ test("draft and public preview do not require contact, targeted CV does", ()=>{
   assert.equal(model.validateAddressedCV(profile).valid, true);
 });
 
+test("encoded public links contain only the public allowlist and no private source values", ()=>{
+  const profile = completeProfile();
+  profile.publicIdentity.displayName = "";
+  profile.privateIdentity = {cvName:"Private Name",contact:{type:"email",value:"private@example.com",bestTime:"after 18:00"}};
+  profile.experience.employmentHistory = [{employer:"Secret Employer",role:"Driver",startMonth:"2024-01",endMonth:"2025-02",summary:"Private summary"}];
+  profile.qualifications.ce.issuingCountry = "PL";
+  profile.qualifications.ce.validUntil = "2030-01-02";
+  profile.qualifications.ce.documentNumber = "CE-SECRET";
+  profile.migration = {source:"roadline_cv_answers_v1",legacyAnswers:{statusEU:"visa",documents:["adr"]}};
+
+  const encoded = model.encodePublicProfile(model.buildPublicProfile(profile));
+  const decodedText = Buffer.from(encoded, "base64url").toString("utf8");
+  for(const forbidden of ["Private Name", "private@example.com", "after 18:00", "Secret Employer", "Private summary", "2030-01-02", "CE-SECRET", "statusEU", "visa"]){
+    assert.equal(decodedText.includes(forbidden), false, `public payload leaked ${forbidden}`);
+  }
+  const decoded = model.decodeSharedProfile(encoded);
+  assert.equal(decoded.publicProfile.displayName, "Driver C+E");
+  assert.deepEqual(decoded.publicProfile.routes.regions, ["benelux"]);
+});
+
 test("expired dates are compared as local calendar dates and exact availability is not public", ()=>{
   const profile = completeProfile();
   profile.qualifications.ce.status = "valid";
@@ -124,6 +191,8 @@ test("expired dates are compared as local calendar dates and exact availability 
 
 test("malformed and unsupported share payloads fail closed", ()=>{
   assert.equal(model.decodeSharedProfile("not-base64"), null);
+  assert.equal(model.decodeSharedProfile("A".repeat(24001)), null);
+  assert.equal(model.decodeSharedProfile(Buffer.from("{broken", "utf8").toString("base64url")), null);
   const unsupported = Buffer.from(JSON.stringify({v:999,publicProfile:{displayName:"x"}})).toString("base64url");
   assert.equal(model.decodeSharedProfile(unsupported), null);
 });

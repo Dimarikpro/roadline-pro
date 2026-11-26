@@ -312,7 +312,9 @@ select:focus,input:focus,textarea:focus{ border-color:var(--brand); box-shadow:0
 @media print{
   :root{ --ink:#111; --muted:#4f5754; --line:#cdd2ce; --brand:#155e52; }
   body{ background:#fff; color:#111; font-family:"Segoe UI",Arial,sans-serif; font-size:10.5pt; }
-  .no-print,#publicDocument,#sharedView,.toast{ display:none !important; }
+  .no-print,#publicDocument,#sharedView,.toast,
+  #outputs .section-heading,#outputs .output-tabs,#publicPanel,
+  #cvPanel .cv-controls,#cvPanel .export-summary,#cvPanel .cv-actions{ display:none !important; }
   #editorView,#outputs,#cvPanel{ display:block !important; margin:0 !important; padding:0 !important; background:#fff !important; }
   #cvDocument{ display:block !important; margin:0; padding:0; border:0; border-radius:0; box-shadow:none; }
   .document-heading{ padding-bottom:8mm; }

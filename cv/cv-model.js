@@ -21,6 +21,7 @@
   const LANGUAGE_CODES = new Set(["ru", "uk", "pl", "en", "de", "nl", "fr"]);
   const LANGUAGE_LEVELS = new Set(["basic", "operational", "confident", "native"]);
   const ROUTE_TYPES = new Set(["local", "domestic", "international", "any"]);
+  const ROUTE_REGIONS = new Set(["benelux", "scandinavia", "europe"]);
   const ROTATIONS = new Set(["", "daily", "weekends", "2_2", "3_1", "4_1", "negotiable"]);
   const HOME_TIME = new Set(["", "daily", "weekly", "rotation", "negotiable"]);
   const PREFERENCE_STATES = new Set(["", "accepted", "negotiable", "excluded"]);
@@ -53,7 +54,8 @@
   function cleanPublicDisplayName(value){
     const text = cleanString(value, 40);
     const digitCount = (text.match(/\d/g) || []).length;
-    if(text.includes("@") || digitCount >= 6) return "";
+    const contactPattern = /(?:@|https?:\/\/|www\.|(?:t|wa)\.me\/|\b(?:e-?mail|mail|phone|tel(?:ephone)?|whatsapp|telegram|signal|viber)\b)/i;
+    if(contactPattern.test(text) || digitCount >= 6) return "";
     return text;
   }
 
@@ -102,6 +104,7 @@
         baseCity:"",
         routeTypes:[],
         routeCountries:[],
+        routeRegions:[],
         rotation:"",
         homeTime:"",
         shifts:{ day:"", night:"", weekends:"" },
@@ -117,7 +120,8 @@
         locale:safeLocale,
         sections:["qualifications", "experience", "languages", "preferences"],
         recipient:""
-      }
+      },
+      migration:null
     };
   }
 
@@ -206,6 +210,7 @@
     profile.preferences.routeCountries = Array.isArray(preferences.routeCountries)
       ? [...new Set(preferences.routeCountries.map(country=>cleanString(country, 2).toUpperCase()).filter(country=>/^[A-Z]{2}$/.test(country)))].slice(0, 20)
       : [];
+    profile.preferences.routeRegions = uniqueEnums(preferences.routeRegions, ROUTE_REGIONS, 3);
     profile.preferences.rotation = enumValue(preferences.rotation, ROTATIONS);
     profile.preferences.homeTime = enumValue(preferences.homeTime, HOME_TIME);
     const shifts = preferences.shifts && typeof preferences.shifts === "object" ? preferences.shifts : {};
@@ -241,6 +246,29 @@
       recipient:cleanString(cvVariant.recipient, 100)
     };
     if(!profile.cvVariant.sections.length) profile.cvVariant.sections = ["qualifications", "experience", "languages", "preferences"];
+    const migration = value.migration && typeof value.migration === "object" ? value.migration : null;
+    if(migration && migration.source === "roadline_cv_answers_v1"){
+      const legacy = migration.legacyAnswers && typeof migration.legacyAnswers === "object" ? migration.legacyAnswers : {};
+      const legacyWorkTypes = new Set(["intl", "local"]);
+      const legacyExperience = new Set(["0-1", "1-3", "3-5", "5+"]);
+      const legacyTrailers = new Set(["tautliner", "reefer", "container", "tanker", "carcarrier", "lowbed"]);
+      const legacyRegions = new Set(["PL", "DE", "FR", "BENELUX", "SCAN", "EU"]);
+      const legacySchedules = new Set(["2/2", "3/1", "4/1", "weekends", "any"]);
+      const legacyDocuments = new Set(["code95", "card", "adr"]);
+      const legacyEuStatuses = new Set(["euCitizen", "karta", "visa", "process"]);
+      profile.migration = {
+        source:"roadline_cv_answers_v1",
+        legacyAnswers:{
+          workType:enumValue(legacy.workType, legacyWorkTypes),
+          experience:enumValue(legacy.experience, legacyExperience),
+          trailers:uniqueEnums(legacy.trailers, legacyTrailers, 6),
+          regions:uniqueEnums(legacy.regions, legacyRegions, 6),
+          schedule:enumValue(legacy.schedule, legacySchedules),
+          documents:uniqueEnums(legacy.documents, legacyDocuments, 3),
+          statusEU:enumValue(legacy.statusEU, legacyEuStatuses)
+        }
+      };
+    }
     return profile;
   }
 
@@ -262,7 +290,18 @@
   function migrateLegacyAnswers(answers, options = {}){
     const raw = answers && typeof answers === "object" ? answers : {};
     const profile = createEmptyProfile(options.locale || "en", options.now);
-    profile.migrationSource = "roadline_cv_answers_v1";
+    profile.migration = {
+      source:"roadline_cv_answers_v1",
+      legacyAnswers:{
+        workType:raw.workType,
+        experience:raw.experience,
+        trailers:Array.isArray(raw.trailers) ? raw.trailers : [],
+        regions:Array.isArray(raw.regions) ? raw.regions : [],
+        schedule:raw.schedule,
+        documents:Array.isArray(raw.documents) ? raw.documents : [],
+        statusEU:raw.statusEU
+      }
+    };
     // A legacy contact name remains private. It must not become a public alias.
     profile.publicIdentity.displayName = "";
     profile.privateIdentity.cvName = cleanString(raw.contactName, 80);
@@ -293,13 +332,27 @@
     if(raw.workType === "intl") profile.preferences.routeTypes = ["international"];
     if(raw.workType === "local") profile.preferences.routeTypes = ["domestic"];
     const regionMap = { PL:"PL", DE:"DE", FR:"FR" };
+    const routeRegionMap = { BENELUX:"benelux", SCAN:"scandinavia", EU:"europe" };
     if(Array.isArray(raw.regions)){
       profile.preferences.routeCountries = [...new Set(raw.regions.map(code=>regionMap[code]).filter(Boolean))];
+      profile.preferences.routeRegions = [...new Set(raw.regions.map(code=>routeRegionMap[code]).filter(Boolean))];
     }
     const rotationMap = { "2/2":"2_2", "3/1":"3_1", "4/1":"4_1", weekends:"weekends", any:"negotiable" };
     profile.preferences.rotation = rotationMap[raw.schedule] || "";
-    // Do not infer overnights, shifts, home time, or work rights from legacy fields.
-    // statusEU is intentionally not migrated.
+    // Do not infer overnights, shifts, home time, or current work rights from legacy fields.
+    // The original EU status remains only in local migration metadata for lossless review.
+    return sanitizeProfile(profile, options);
+  }
+
+  function backfillLegacyMigration(rawProfile, answers, options = {}){
+    const profile = sanitizeProfile(rawProfile, options);
+    if(profile.migration) return profile;
+    const migrated = migrateLegacyAnswers(answers, options);
+    profile.migration = migrated.migration;
+    profile.preferences.routeRegions = [...new Set([
+      ...profile.preferences.routeRegions,
+      ...migrated.preferences.routeRegions
+    ])];
     return sanitizeProfile(profile, options);
   }
 
@@ -346,7 +399,11 @@
       },
       workingLanguages:profile.workingLanguages.map(item=>({ code:item.code, level:item.level })),
       region:{ country:profile.preferences.baseCountry, city:profile.preferences.baseCity },
-      routes:{ types:[...profile.preferences.routeTypes], countries:[...profile.preferences.routeCountries] },
+      routes:{
+        types:[...profile.preferences.routeTypes],
+        countries:[...profile.preferences.routeCountries],
+        regions:[...profile.preferences.routeRegions]
+      },
       preferences:{
         rotation:profile.preferences.rotation || "unknown",
         homeTime:profile.preferences.homeTime || "unknown",
@@ -399,7 +456,8 @@
       types:uniqueEnums(routes.types, ROUTE_TYPES, 4),
       countries:Array.isArray(routes.countries)
         ? [...new Set(routes.countries.map(code=>cleanString(code, 2).toUpperCase()).filter(code=>/^[A-Z]{2}$/.test(code)))].slice(0, 20)
-        : []
+        : [],
+      regions:uniqueEnums(routes.regions, ROUTE_REGIONS, 3)
     };
     const preferences = value.preferences && typeof value.preferences === "object" ? value.preferences : {};
     const shifts = preferences.shifts && typeof preferences.shifts === "object" ? preferences.shifts : {};
@@ -524,6 +582,7 @@
     createEmptyProfile,
     sanitizeProfile,
     migrateLegacyAnswers,
+    backfillLegacyMigration,
     buildPublicProfile,
     sanitizePublicProfile,
     encodePublicProfile,
