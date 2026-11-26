@@ -1,0 +1,48 @@
+name: Roadline CV CI
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: roadline-cv-ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: JavaScript, structure, privacy and migration
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Use current Node.js LTS
+        uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+          check-latest: true
+
+      - name: Report runtime
+        run: node --version
+
+      - name: Check JavaScript syntax
+        run: find cv tests -type f -name '*.js' -print0 | xargs -0 -n1 node --check
+
+      - name: Run application, privacy and migration tests
+        run: node --test tests/*.test.js
+
+      - name: Check patch formatting
+        shell: bash
+        run: |
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            git diff --check "${{ github.event.pull_request.base.sha }}...HEAD"
+          else
+            git diff --check
+          fi

@@ -1,651 +1,791 @@
-// cv.js
-/* =========================
-   1) Language engine
-========================= */
-const LS_LANG_KEY = "roadline_lang";
-function normalizeLang(raw){
-  const l = (raw || "en").toLowerCase();
-  if (l.startsWith("pl")) return "pl";
-  if (l.startsWith("uk")) return "uk";
-  if (l.startsWith("ru") || l.startsWith("be")) return "ru";
-  return "en";
-}
-function detectLang(){
-  const saved = localStorage.getItem(LS_LANG_KEY);
-  if(saved) return saved;
-  return normalizeLang(navigator.language || (navigator.languages && navigator.languages[0]) || "en");
-}
-function setLang(lang){
-  document.documentElement.lang = lang;
+(function initRoadlineCV(){
+  "use strict";
 
-  document.querySelectorAll("[data-lang]").forEach(el=>{
-    el.classList.toggle("active", el.dataset.lang === lang);
-  });
-  document.querySelectorAll("[data-lang-inline]").forEach(el=>{
-    el.classList.toggle("active", el.dataset.langInline === lang);
-  });
+  const model = globalThis.RoadlineCVModel;
+  if(!model) throw new Error("RoadlineCVModel is required");
 
-  const sel = document.getElementById("langSelect");
-  if(sel) sel.value = lang;
+  const PROFILE_KEY = "roadline_cv_profile_v2";
+  const LEGACY_KEY = "roadline_cv_answers_v1";
+  const LANG_KEY = "roadline_lang";
+  const STEP_KEY = "roadline_cv_step_v2";
+  const SHARE_PARAM = "profile";
+  const STEP_COUNT = 6;
+  const LOCALES = ["ru", "uk", "en", "pl"];
 
-  localStorage.setItem(LS_LANG_KEY, lang);
-  state.lang = lang;
+  const TEXT = {
+    ru:{
+      language:"Язык", eyebrow:"ROADLINE CV 2.0", heroTitle:"Профессиональный профиль водителя C+E",
+      heroCopy:"Квалификации, реальный опыт и условия работы — отдельно и без лишних данных.", start:"Создать профиль", seeOutputs:"Как выглядит результат",
+      localFirst:"Черновик остаётся в этом браузере", localFirstCopy:"Контакт не нужен для сохранения. В публичный preview он не попадёт.",
+      publicPreview:"ПУБЛИЧНЫЙ PREVIEW", sharedNotice:"Это профессиональная карточка без контактов. Она доступна только для чтения и не является проверенной квалификацией.", buildOwn:"Создать свой профиль",
+      selfDeclared:"Заявлено водителем", profileProgress:"ПРОФИЛЬ", draftTitle:"Автосохранение", draftCopy:"Данные хранятся локально. На общем телефоне удалите черновик после экспорта.",
+      back:"Назад", next:"Далее", viewResults:"К результатам", twoOutputs:"ДВА РЕЗУЛЬТАТА", outputsTitle:"Один источник фактов — разные уровни доступа",
+      outputsCopy:"Публичный preview исключает контакты по схеме. Адресное CV создаётся только после вашего выбора.", deleteDraft:"Удалить черновик",
+      publicProfile:"Публичный preview", privateCv:"Адресное CV", publicContains:"В preview входят", publicContainsCopy:"Псевдоним, профессиональные статусы, опыт, языки, регион и общие условия. Без имени, контакта, работодателей и точных дат.",
+      copyText:"Копировать текст", copyPreviewLink:"Копировать preview-ссылку", linkWarning:"Ссылка кодирует разрешённые поля, но не является шифрованием и не может быть отозвана. Не публикуйте её, если не хотите раскрывать карточку.",
+      cvLanguage:"Язык CV", recipient:"Получатель (необязательно)", recipientPlaceholder:"Название компании или вакансии", sections:"Разделы CV", qualifications:"Квалификации", experience:"Опыт", languages:"Языки", preferences:"Условия", history:"История работы",
+      copyCv:"Копировать CV", printCv:"Печать / сохранить PDF", footerCopy:"Локальный профессиональный профиль. Без загрузки документов.", saved:"Сохранено локально", migrated:"Старый черновик перенесён в CV 2.0", step:"Шаг", of:"из",
+      completeStep:"Ответьте на отмеченные вопросы. «Не знаю» — допустимый ответ.", draftIncomplete:"Сначала заполните профессиональную часть профиля.", cvIncomplete:"Для адресного CV укажите имя и один корректный канал связи.", copied:"Скопировано", copyFailed:"Не удалось скопировать", deleteConfirm:"Удалить локальные данные CV 2.0 и старый черновик с этого устройства?", deleted:"Черновик удалён", previewReady:"Preview готов: контакты и работодатели исключены.",
+      profession:"Профессиональное направление", professionValue:"Водитель грузового автомобиля C+E", status:"Статус", country:"Страна выдачи", validUntil:"Действует до", optionalDetails:"Необязательные детали документа", cpcType:"Тип квалификации", adrSpecialisations:"Специализации ADR", noUpload:"Номера и файлы документов не запрашиваются.",
+      ceStatus:"Категория C+E", cpcStatus:"Профессиональная квалификация / Code 95 / CPC", tachoStatus:"Карта цифрового тахографа", adrStatus:"ADR (если применимо)",
+      ceExperience:"Фактический опыт вождения C+E", ceExperienceHelp:"Укажите практику, а не дату получения прав.", equipmentAnswer:"Есть ли опыт с конкретным оборудованием?", equipment:"Оборудование", equipmentHelp:"Цистерна не означает ADR; морской контейнер, BDF и hook-lift разделены.", cargo:"Типы груза", cargoHelp:"Груз хранится отдельно от оборудования и квалификаций.", experienceLevel:"Уровень самостоятельности", noneEquipment:"Нет практического опыта", selectEquipment:"Выбрать оборудование",
+      cargoRow:"Грузы",
+      optionalHistory:"История работы — необязательно", optionalHistoryCopy:"Для расширенного адресного CV. Работодатели никогда не попадают в публичный preview.", addJob:"Добавить место работы", employer:"Организация", role:"Роль", startMonth:"Начало", endMonth:"Окончание", taskSummary:"Оборудование и задачи", remove:"Удалить", training:"Готовность учиться", trainingCopy:"Показывается, когда квалификация или практика требуют уточнения.",
+      workingLanguages:"Рабочие языки", workingLanguagesHelp:"Язык интерфейса не добавляется автоматически. Выберите язык и уровень общения на работе.", addLanguage:"Добавить язык", level:"Уровень",
+      baseCountry:"Предпочтительная страна / база", baseCity:"Город или регион (без точного адреса)", routes:"Желаемые маршруты", routeRegions:"Регионы маршрутов — необязательно", routeCountries:"Страны маршрутов — необязательно", geographyHelp:"Это предпочтения по работе, а не гражданство и не право на работу.",
+      rotation:"Система работы", homeTime:"Возвращение домой", dayShift:"Дневные смены", nightShift:"Ночные смены", weekends:"Работа в выходные", overnights:"Ночёвки в рейсе", availability:"Когда готовы приступить", availabilityDate:"Точная дата (в public будет только месяц)",
+      displayName:"Имя для публичной карточки", displayNameHelp:"Псевдоним или короткое профессиональное имя. Контакт сюда не вводите.", cvName:"Имя для адресного CV", contactType:"Один выбранный канал связи", contactValue:"Контакт", bestTime:"Удобное время / часовой пояс", privateOnly:"Эти данные остаются приватными и появляются только в адресном CV.", reviewReady:"Профессиональная часть заполнена", reviewNotReady:"Профессиональная часть ещё не заполнена", contactOptional:"Контакт можно добавить позже; он не нужен для черновика и public preview.",
+      profile:"Профиль", documents:"Профессиональные статусы", actualExperience:"Фактический опыт C+E", equipmentRow:"Оборудование", workingLanguageRow:"Рабочие языки", base:"База", routeType:"Маршруты", conditions:"Условия работы", availabilityRow:"Доступность", contact:"Контакт", recipientRow:"Получатель", generated:"Сформировано", trainingRow:"Готовность к обучению", unknown:"Не указано", noData:"Нет данных", publicUpdated:"Актуально на", sectionsSelected:"Разделы", cvReady:"CV готово к копированию и печати", cvNeedsContact:"Добавьте имя и один контакт на шаге 6", printHint:"Откроется системная печать; выберите «Сохранить как PDF».",
+      stepNames:["Квалификации","Опыт","Языки","База и маршруты","Условия","Проверка"],
+      stepTitles:["Профессиональные квалификации","Реальный опыт, а не только права","Рабочая коммуникация","Где и по каким маршрутам","Подходящие условия труда","Проверьте и выберите раскрытие"],
+      stepIntros:["Статус каждого документа хранится отдельно. Можно ответить «не знаю», «учусь» или «нет».","Разделяем общий стаж, оборудование и уровень самостоятельности.","Добавьте языки, на которых можете общаться с диспетчером, складом и по документам.","Предпочтительная база не является адресом, гражданством или разрешением на работу.","Ночные смены, выходные и ночёвки — независимые условия.","Черновик и public preview не требуют контакта. Для адресного CV нужен один выбранный канал."]
+    },
+    uk:{
+      language:"Мова", eyebrow:"ROADLINE CV 2.0", heroTitle:"Професійний профіль водія C+E", heroCopy:"Кваліфікації, реальний досвід та умови роботи — окремо й без зайвих даних.", start:"Створити профіль", seeOutputs:"Як виглядає результат",
+      localFirst:"Чернетка залишається в цьому браузері", localFirstCopy:"Контакт не потрібен для збереження. У публічний preview він не потрапить.", publicPreview:"ПУБЛІЧНИЙ PREVIEW", sharedNotice:"Це професійна картка без контактів. Вона доступна лише для читання й не є перевіреною кваліфікацією.", buildOwn:"Створити свій профіль", selfDeclared:"Заявлено водієм", profileProgress:"ПРОФІЛЬ", draftTitle:"Автозбереження", draftCopy:"Дані зберігаються локально. На спільному телефоні видаліть чернетку після експорту.",
+      back:"Назад", next:"Далі", viewResults:"До результатів", twoOutputs:"ДВА РЕЗУЛЬТАТИ", outputsTitle:"Одне джерело фактів — різні рівні доступу", outputsCopy:"Публічний preview виключає контакти за схемою. Адресне CV створюється лише після вашого вибору.", deleteDraft:"Видалити чернетку", publicProfile:"Публічний preview", privateCv:"Адресне CV", publicContains:"У preview входять", publicContainsCopy:"Псевдонім, професійні статуси, досвід, мови, регіон і загальні умови. Без імені, контакту, роботодавців і точних дат.", copyText:"Копіювати текст", copyPreviewLink:"Копіювати preview-посилання", linkWarning:"Посилання кодує дозволені поля, але не є шифруванням і не може бути відкликане. Не публікуйте його, якщо не хочете розкривати картку.",
+      cvLanguage:"Мова CV", recipient:"Одержувач (необов’язково)", recipientPlaceholder:"Назва компанії або вакансії", sections:"Розділи CV", qualifications:"Кваліфікації", experience:"Досвід", languages:"Мови", preferences:"Умови", history:"Історія роботи", copyCv:"Копіювати CV", printCv:"Друк / зберегти PDF", footerCopy:"Локальний професійний профіль. Без завантаження документів.", saved:"Збережено локально", migrated:"Стару чернетку перенесено до CV 2.0", step:"Крок", of:"з", completeStep:"Дайте відповіді на позначені питання. «Не знаю» — допустима відповідь.", draftIncomplete:"Спочатку заповніть професійну частину профілю.", cvIncomplete:"Для адресного CV вкажіть ім’я та один коректний канал зв’язку.", copied:"Скопійовано", copyFailed:"Не вдалося скопіювати", deleteConfirm:"Видалити локальні дані CV 2.0 і стару чернетку з цього пристрою?", deleted:"Чернетку видалено", previewReady:"Preview готовий: контакти та роботодавці виключені.",
+      profession:"Професійний напрям", professionValue:"Водій вантажного автомобіля C+E", status:"Статус", country:"Країна видачі", validUntil:"Дійсний до", optionalDetails:"Необов’язкові деталі документа", cpcType:"Тип кваліфікації", adrSpecialisations:"Спеціалізації ADR", noUpload:"Номери й файли документів не запитуються.", ceStatus:"Категорія C+E", cpcStatus:"Професійна кваліфікація / Code 95 / CPC", tachoStatus:"Картка цифрового тахографа", adrStatus:"ADR (якщо застосовно)",
+      ceExperience:"Фактичний досвід водіння C+E", ceExperienceHelp:"Вкажіть практику, а не дату отримання прав.", equipmentAnswer:"Чи є досвід із конкретним обладнанням?", equipment:"Обладнання", equipmentHelp:"Цистерна не означає ADR; морський контейнер, BDF і hook-lift розділені.", cargo:"Типи вантажу", cargoHelp:"Вантаж зберігається окремо від обладнання та кваліфікацій.", cargoRow:"Вантажі", experienceLevel:"Рівень самостійності", noneEquipment:"Немає практичного досвіду", selectEquipment:"Вибрати обладнання", optionalHistory:"Історія роботи — необов’язково", optionalHistoryCopy:"Для розширеного адресного CV. Роботодавці ніколи не потрапляють у public preview.", addJob:"Додати місце роботи", employer:"Організація", role:"Роль", startMonth:"Початок", endMonth:"Завершення", taskSummary:"Обладнання та завдання", remove:"Видалити", training:"Готовність навчатися", trainingCopy:"Показується, коли кваліфікація або практика потребують уточнення.",
+      workingLanguages:"Робочі мови", workingLanguagesHelp:"Мова інтерфейсу не додається автоматично. Виберіть мову та рівень спілкування на роботі.", addLanguage:"Додати мову", level:"Рівень", baseCountry:"Бажана країна / база", baseCity:"Місто або регіон (без точної адреси)", routes:"Бажані маршрути", routeRegions:"Регіони маршрутів — необов’язково", routeCountries:"Країни маршрутів — необов’язково", geographyHelp:"Це робочі вподобання, а не громадянство чи право на роботу.",
+      rotation:"Система роботи", homeTime:"Повернення додому", dayShift:"Денні зміни", nightShift:"Нічні зміни", weekends:"Робота у вихідні", overnights:"Ночівлі в рейсі", availability:"Коли готові почати", availabilityDate:"Точна дата (у public буде лише місяць)", displayName:"Ім’я для публічної картки", displayNameHelp:"Псевдонім або коротке професійне ім’я. Контакт сюди не вводьте.", cvName:"Ім’я для адресного CV", contactType:"Один вибраний канал зв’язку", contactValue:"Контакт", bestTime:"Зручний час / часовий пояс", privateOnly:"Ці дані залишаються приватними й з’являються лише в адресному CV.", reviewReady:"Професійну частину заповнено", reviewNotReady:"Професійну частину ще не заповнено", contactOptional:"Контакт можна додати пізніше; він не потрібен для чернетки та public preview.",
+      profile:"Профіль", documents:"Професійні статуси", actualExperience:"Фактичний досвід C+E", equipmentRow:"Обладнання", workingLanguageRow:"Робочі мови", base:"База", routeType:"Маршрути", conditions:"Умови роботи", availabilityRow:"Доступність", contact:"Контакт", recipientRow:"Одержувач", generated:"Сформовано", trainingRow:"Готовність до навчання", unknown:"Не вказано", noData:"Немає даних", publicUpdated:"Актуально на", sectionsSelected:"Розділи", cvReady:"CV готове до копіювання й друку", cvNeedsContact:"Додайте ім’я та один контакт на кроці 6", printHint:"Відкриється системний друк; виберіть «Зберегти як PDF».",
+      stepNames:["Кваліфікації","Досвід","Мови","База і маршрути","Умови","Перевірка"], stepTitles:["Професійні кваліфікації","Реальний досвід, а не лише права","Робоча комунікація","Де і якими маршрутами","Відповідні умови праці","Перевірте та виберіть розкриття"], stepIntros:["Статус кожного документа зберігається окремо. Можна відповісти «не знаю», «навчаюся» або «немає».","Розділяємо загальний стаж, обладнання та рівень самостійності.","Додайте мови спілкування з диспетчером, складом і для документів.","Бажана база не є адресою, громадянством або дозволом на роботу.","Нічні зміни, вихідні та ночівлі — незалежні умови.","Чернетка й public preview не потребують контакту. Для адресного CV потрібен один канал."]
+    },
+    en:{
+      language:"Language", eyebrow:"ROADLINE CV 2.0", heroTitle:"Professional C+E driver profile", heroCopy:"Qualifications, actual experience and work preferences — kept separate and free of unnecessary data.", start:"Build profile", seeOutputs:"See the outputs", localFirst:"Your draft stays in this browser", localFirstCopy:"A contact is not required to save. It is never included in the public preview.", publicPreview:"PUBLIC PREVIEW", sharedNotice:"This is a read-only professional card without contact details. It is not a verified qualification.", buildOwn:"Build my profile", selfDeclared:"Self-declared", profileProgress:"PROFILE", draftTitle:"Autosave", draftCopy:"Data is stored locally. On a shared phone, delete the draft after exporting.",
+      back:"Back", next:"Next", viewResults:"View results", twoOutputs:"TWO OUTPUTS", outputsTitle:"One source of facts — different access levels", outputsCopy:"The public preview excludes contacts by schema. A targeted CV is created only after your choice.", deleteDraft:"Delete draft", publicProfile:"Public preview", privateCv:"Targeted CV", publicContains:"The preview contains", publicContainsCopy:"Alias, professional statuses, experience, languages, region and general preferences. No name, contact, employers or exact dates.", copyText:"Copy text", copyPreviewLink:"Copy preview link", linkWarning:"The link encodes allowed fields, but it is not encryption and cannot be revoked. Do not publish it unless you want to disclose the card.",
+      cvLanguage:"CV language", recipient:"Recipient (optional)", recipientPlaceholder:"Company or vacancy name", sections:"CV sections", qualifications:"Qualifications", experience:"Experience", languages:"Languages", preferences:"Preferences", history:"Employment history", copyCv:"Copy CV", printCv:"Print / save PDF", footerCopy:"Local professional profile. No document uploads.", saved:"Saved locally", migrated:"Old draft migrated to CV 2.0", step:"Step", of:"of", completeStep:"Answer the marked questions. “Unknown” is a valid answer.", draftIncomplete:"Complete the professional profile first.", cvIncomplete:"A targeted CV needs a name and one valid contact channel.", copied:"Copied", copyFailed:"Could not copy", deleteConfirm:"Delete CV 2.0 data and the old draft from this device?", deleted:"Draft deleted", previewReady:"Preview ready: contacts and employers are excluded.",
+      profession:"Professional track", professionValue:"C+E truck driver", status:"Status", country:"Issuing country", validUntil:"Valid until", optionalDetails:"Optional document details", cpcType:"Qualification type", adrSpecialisations:"ADR specialisations", noUpload:"Document numbers and files are not requested.", ceStatus:"C+E licence", cpcStatus:"Driver CPC / Code 95 / professional qualification", tachoStatus:"Digital tachograph driver card", adrStatus:"ADR (when relevant)",
+      ceExperience:"Actual C+E driving experience", ceExperienceHelp:"Report hands-on practice, not the licence issue date.", equipmentAnswer:"Do you have experience with specific equipment?", equipment:"Equipment", equipmentHelp:"A tanker does not mean ADR; sea containers, BDF and hook-lift are separate.", cargo:"Cargo types", cargoHelp:"Cargo is stored separately from equipment and qualifications.", cargoRow:"Cargo", experienceLevel:"Independence level", noneEquipment:"No practical equipment experience", selectEquipment:"Select equipment", optionalHistory:"Employment history — optional", optionalHistoryCopy:"For the extended targeted CV. Employers are never included in the public preview.", addJob:"Add employment", employer:"Organisation", role:"Role", startMonth:"Start", endMonth:"End", taskSummary:"Equipment and tasks", remove:"Remove", training:"Willingness to train", trainingCopy:"Shown when a qualification or practical skill needs clarification.",
+      workingLanguages:"Working languages", workingLanguagesHelp:"The interface language is not added automatically. Choose languages used with dispatch, warehouses and documents.", addLanguage:"Add language", level:"Level", baseCountry:"Preferred country / base", baseCity:"City or region (no exact address)", routes:"Preferred routes", routeRegions:"Route regions — optional", routeCountries:"Route countries — optional", geographyHelp:"These are work preferences, not citizenship or work authorisation.",
+      rotation:"Work pattern", homeTime:"Home time", dayShift:"Day shifts", nightShift:"Night shifts", weekends:"Weekend work", overnights:"Nights away", availability:"Available to start", availabilityDate:"Exact date (public shows month only)", displayName:"Public card name", displayNameHelp:"An alias or short professional name. Do not enter a contact here.", cvName:"Name for targeted CV", contactType:"One selected contact channel", contactValue:"Contact", bestTime:"Preferred time / time zone", privateOnly:"These details stay private and appear only in the targeted CV.", reviewReady:"Professional profile is complete", reviewNotReady:"Professional profile is incomplete", contactOptional:"You can add a contact later; it is not needed for a draft or public preview.",
+      profile:"Profile", documents:"Professional statuses", actualExperience:"Actual C+E experience", equipmentRow:"Equipment", workingLanguageRow:"Working languages", base:"Base", routeType:"Routes", conditions:"Work preferences", availabilityRow:"Availability", contact:"Contact", recipientRow:"Recipient", generated:"Generated", trainingRow:"Training", unknown:"Not provided", noData:"No data", publicUpdated:"Updated", sectionsSelected:"Sections", cvReady:"CV is ready to copy and print", cvNeedsContact:"Add a name and one contact on step 6", printHint:"System print will open; choose “Save as PDF”.",
+      stepNames:["Qualifications","Experience","Languages","Base & routes","Preferences","Review"], stepTitles:["Professional qualifications","Actual practice, not just a licence","Working communication","Where and on which routes","Work preferences that fit","Review and choose disclosure"], stepIntros:["Each document has its own status. “Unknown”, “pending” and “absent” are valid answers.","Overall practice, equipment and independence are recorded separately.","Add languages used with dispatch, warehouses and documents.","A preferred base is not an address, citizenship or work authorisation.","Night shifts, weekends and nights away are separate preferences.","A draft and public preview need no contact. A targeted CV needs one selected channel."]
+    },
+    pl:{
+      language:"Język", eyebrow:"ROADLINE CV 2.0", heroTitle:"Profesjonalny profil kierowcy C+E", heroCopy:"Kwalifikacje, rzeczywiste doświadczenie i warunki pracy — osobno, bez zbędnych danych.", start:"Utwórz profil", seeOutputs:"Zobacz wyniki", localFirst:"Wersja robocza zostaje w tej przeglądarce", localFirstCopy:"Kontakt nie jest potrzebny do zapisu i nie trafia do publicznego podglądu.", publicPreview:"PUBLICZNY PODGLĄD", sharedNotice:"To karta zawodowa bez danych kontaktowych, tylko do odczytu. Nie potwierdza kwalifikacji.", buildOwn:"Utwórz mój profil", selfDeclared:"Deklaracja kierowcy", profileProgress:"PROFIL", draftTitle:"Autozapis", draftCopy:"Dane są zapisane lokalnie. Na wspólnym telefonie usuń wersję roboczą po eksporcie.",
+      back:"Wstecz", next:"Dalej", viewResults:"Zobacz wyniki", twoOutputs:"DWA WYNIKI", outputsTitle:"Jedno źródło faktów — różne poziomy dostępu", outputsCopy:"Publiczny podgląd wyklucza kontakty według schematu. CV dla adresata powstaje dopiero po Twoim wyborze.", deleteDraft:"Usuń wersję roboczą", publicProfile:"Publiczny podgląd", privateCv:"CV dla adresata", publicContains:"Podgląd zawiera", publicContainsCopy:"Pseudonim, statusy zawodowe, doświadczenie, języki, region i ogólne warunki. Bez imienia, kontaktu, pracodawców i dokładnych dat.", copyText:"Kopiuj tekst", copyPreviewLink:"Kopiuj link podglądu", linkWarning:"Link koduje dozwolone pola, ale nie jest szyfrowaniem i nie można go unieważnić. Nie publikuj go, jeśli nie chcesz ujawniać karty.",
+      cvLanguage:"Język CV", recipient:"Adresat (opcjonalnie)", recipientPlaceholder:"Nazwa firmy lub wakatu", sections:"Sekcje CV", qualifications:"Kwalifikacje", experience:"Doświadczenie", languages:"Języki", preferences:"Warunki", history:"Historia zatrudnienia", copyCv:"Kopiuj CV", printCv:"Drukuj / zapisz PDF", footerCopy:"Lokalny profil zawodowy. Bez przesyłania dokumentów.", saved:"Zapisano lokalnie", migrated:"Stara wersja robocza przeniesiona do CV 2.0", step:"Krok", of:"z", completeStep:"Odpowiedz na oznaczone pytania. „Nie wiem” jest poprawną odpowiedzią.", draftIncomplete:"Najpierw uzupełnij zawodową część profilu.", cvIncomplete:"CV dla adresata wymaga imienia i jednego poprawnego kanału kontaktu.", copied:"Skopiowano", copyFailed:"Nie udało się skopiować", deleteConfirm:"Usunąć dane CV 2.0 i starą wersję roboczą z tego urządzenia?", deleted:"Wersję roboczą usunięto", previewReady:"Podgląd gotowy: kontakty i pracodawcy są wykluczeni.",
+      profession:"Kierunek zawodowy", professionValue:"Kierowca samochodu ciężarowego C+E", status:"Status", country:"Kraj wydania", validUntil:"Ważne do", optionalDetails:"Opcjonalne dane dokumentu", cpcType:"Typ kwalifikacji", adrSpecialisations:"Specjalizacje ADR", noUpload:"Nie prosimy o numery ani pliki dokumentów.", ceStatus:"Prawo jazdy C+E", cpcStatus:"Kwalifikacja zawodowa / kod 95 / Driver CPC", tachoStatus:"Karta kierowcy do tachografu", adrStatus:"ADR (jeśli dotyczy)",
+      ceExperience:"Rzeczywiste doświadczenie C+E", ceExperienceHelp:"Podaj praktykę, nie datę uzyskania prawa jazdy.", equipmentAnswer:"Masz doświadczenie z konkretnym sprzętem?", equipment:"Sprzęt", equipmentHelp:"Cysterna nie oznacza ADR; kontener morski, BDF i hakowiec są rozdzielone.", cargo:"Rodzaje ładunku", cargoHelp:"Ładunek jest zapisany osobno od sprzętu i kwalifikacji.", cargoRow:"Ładunki", experienceLevel:"Poziom samodzielności", noneEquipment:"Brak praktycznego doświadczenia", selectEquipment:"Wybierz sprzęt", optionalHistory:"Historia zatrudnienia — opcjonalnie", optionalHistoryCopy:"Do rozszerzonego CV dla adresata. Pracodawcy nigdy nie trafiają do publicznego podglądu.", addJob:"Dodaj zatrudnienie", employer:"Organizacja", role:"Rola", startMonth:"Początek", endMonth:"Koniec", taskSummary:"Sprzęt i zadania", remove:"Usuń", training:"Gotowość do nauki", trainingCopy:"Pokazywana, gdy kwalifikacja lub praktyka wymaga doprecyzowania.",
+      workingLanguages:"Języki w pracy", workingLanguagesHelp:"Język interfejsu nie jest dodawany automatycznie. Wybierz języki do kontaktu z dyspozytorem, magazynem i dokumentami.", addLanguage:"Dodaj język", level:"Poziom", baseCountry:"Preferowany kraj / baza", baseCity:"Miasto lub region (bez dokładnego adresu)", routes:"Preferowane trasy", routeRegions:"Regiony tras — opcjonalnie", routeCountries:"Kraje tras — opcjonalnie", geographyHelp:"To preferencje pracy, nie obywatelstwo ani prawo do pracy.",
+      rotation:"System pracy", homeTime:"Powroty do domu", dayShift:"Zmiany dzienne", nightShift:"Zmiany nocne", weekends:"Praca w weekendy", overnights:"Noclegi w trasie", availability:"Dostępność od", availabilityDate:"Dokładna data (publicznie tylko miesiąc)", displayName:"Nazwa publicznej karty", displayNameHelp:"Pseudonim lub krótka nazwa zawodowa. Nie wpisuj tu kontaktu.", cvName:"Imię do CV dla adresata", contactType:"Jeden wybrany kanał kontaktu", contactValue:"Kontakt", bestTime:"Dogodny czas / strefa czasowa", privateOnly:"Te dane pozostają prywatne i pojawiają się tylko w CV dla adresata.", reviewReady:"Część zawodowa jest kompletna", reviewNotReady:"Część zawodowa nie jest kompletna", contactOptional:"Kontakt można dodać później; nie jest potrzebny do wersji roboczej ani publicznego podglądu.",
+      profile:"Profil", documents:"Statusy zawodowe", actualExperience:"Rzeczywiste doświadczenie C+E", equipmentRow:"Sprzęt", workingLanguageRow:"Języki w pracy", base:"Baza", routeType:"Trasy", conditions:"Warunki pracy", availabilityRow:"Dostępność", contact:"Kontakt", recipientRow:"Adresat", generated:"Utworzono", trainingRow:"Gotowość do szkolenia", unknown:"Nie podano", noData:"Brak danych", publicUpdated:"Aktualne na", sectionsSelected:"Sekcje", cvReady:"CV jest gotowe do kopiowania i druku", cvNeedsContact:"Dodaj imię i jeden kontakt w kroku 6", printHint:"Otworzy się druk systemowy; wybierz „Zapisz jako PDF”.",
+      stepNames:["Kwalifikacje","Doświadczenie","Języki","Baza i trasy","Warunki","Sprawdzenie"], stepTitles:["Kwalifikacje zawodowe","Praktyka, nie tylko prawo jazdy","Komunikacja w pracy","Gdzie i na jakich trasach","Pasujące warunki pracy","Sprawdź i wybierz zakres danych"], stepIntros:["Każdy dokument ma osobny status. „Nie wiem”, „w trakcie” i „brak” są poprawnymi odpowiedziami.","Ogólna praktyka, sprzęt i samodzielność są zapisane osobno.","Dodaj języki używane z dyspozytorem, magazynem i w dokumentach.","Preferowana baza nie jest adresem, obywatelstwem ani prawem do pracy.","Nocne zmiany, weekendy i noclegi to osobne warunki.","Wersja robocza i publiczny podgląd nie wymagają kontaktu. CV dla adresata wymaga jednego kanału."]
+    }
+  };
 
-  updateUIStrings();
-  renderQuestion();
-  renderResume();
-  updateShareLinks();
-}
+  const VALUE_LABELS = {
+    status:{
+      valid:{ru:"Действует",uk:"Дійсний",en:"Valid",pl:"Ważny"}, expired:{ru:"Истёк",uk:"Закінчився",en:"Expired",pl:"Wygasł"}, pending:{ru:"Учусь / ожидаю",uk:"Навчаюся / очікую",en:"Pending / training",pl:"W trakcie / szkolę się"}, absent:{ru:"Нет",uk:"Немає",en:"Absent",pl:"Brak"}, unknown:{ru:"Не знаю",uk:"Не знаю",en:"Unknown",pl:"Nie wiem"}, "":{ru:"Не указано",uk:"Не вказано",en:"Not provided",pl:"Nie podano"}
+    },
+    cpc:{ eu_code_95:{ru:"EU Code 95",uk:"EU Code 95",en:"EU Code 95",pl:"Kod 95 UE"}, uk_national:{ru:"UK National CPC",uk:"UK National CPC",en:"UK National CPC",pl:"UK National CPC"}, uk_international:{ru:"UK International CPC",uk:"UK International CPC",en:"UK International CPC",pl:"UK International CPC"}, other:{ru:"Другая",uk:"Інша",en:"Other",pl:"Inna"}, unknown:{ru:"Не знаю",uk:"Не знаю",en:"Unknown",pl:"Nie wiem"} },
+    adr:{ base:{ru:"ADR базовый",uk:"ADR базовий",en:"ADR basic",pl:"ADR podstawowy"}, tank:{ru:"ADR цистерны",uk:"ADR цистерни",en:"ADR tanks",pl:"ADR cysterny"}, class_1:{ru:"Класс 1",uk:"Клас 1",en:"Class 1",pl:"Klasa 1"}, class_7:{ru:"Класс 7",uk:"Клас 7",en:"Class 7",pl:"Klasa 7"} },
+    experience:{ none:{ru:"Нет практики",uk:"Немає практики",en:"No practice",pl:"Brak praktyki"}, lt_6m:{ru:"Менее 6 месяцев",uk:"Менше 6 місяців",en:"Under 6 months",pl:"Mniej niż 6 miesięcy"}, "6_12m":{ru:"6–12 месяцев",uk:"6–12 місяців",en:"6–12 months",pl:"6–12 miesięcy"}, "1_2y":{ru:"1–2 года",uk:"1–2 роки",en:"1–2 years",pl:"1–2 lata"}, "2_5y":{ru:"2–5 лет",uk:"2–5 років",en:"2–5 years",pl:"2–5 lat"}, "5y_plus":{ru:"Более 5 лет",uk:"Понад 5 років",en:"5+ years",pl:"Ponad 5 lat"}, unknown:{ru:"Не указано",uk:"Не вказано",en:"Not provided",pl:"Nie podano"} },
+    equipment:{ tautliner:{ru:"Тент / штора",uk:"Тент / штора",en:"Tautliner / curtain",pl:"Plandeka"}, reefer:{ru:"Рефрижератор",uk:"Рефрижератор",en:"Reefer",pl:"Chłodnia"}, sea_container:{ru:"Морской контейнер",uk:"Морський контейнер",en:"Sea container",pl:"Kontener morski"}, bdf:{ru:"BDF / Wechselbrücke",uk:"BDF / Wechselbrücke",en:"BDF / swap body",pl:"BDF / nadwozie wymienne"}, hook_lift:{ru:"Hook-lift / крюковой",uk:"Hook-lift / гаковий",en:"Hook-lift",pl:"Hakowiec"}, tanker:{ru:"Цистерна",uk:"Цистерна",en:"Tanker",pl:"Cysterna"}, silo:{ru:"Силос",uk:"Силос",en:"Silo",pl:"Silos"}, car_carrier:{ru:"Автовоз",uk:"Автовоз",en:"Car carrier",pl:"Autotransporter"}, low_bed:{ru:"Низкорамник",uk:"Низькорамний",en:"Low-bed",pl:"Niskopodwozie"}, walking_floor:{ru:"Подвижный пол",uk:"Рухома підлога",en:"Walking floor",pl:"Ruchoma podłoga"} },
+    cargo:{ general:{ru:"Генеральный груз",uk:"Генеральний вантаж",en:"General freight",pl:"Ładunek ogólny"}, refrigerated:{ru:"Температурный груз",uk:"Температурний вантаж",en:"Temperature-controlled",pl:"Ładunek chłodniczy"}, food_liquid:{ru:"Пищевая жидкость",uk:"Харчова рідина",en:"Food-grade liquid",pl:"Płyn spożywczy"}, dangerous_goods:{ru:"Опасный груз",uk:"Небезпечний вантаж",en:"Dangerous goods",pl:"Towary niebezpieczne"}, vehicles:{ru:"Автомобили",uk:"Автомобілі",en:"Vehicles",pl:"Pojazdy"}, dry_bulk:{ru:"Сыпучий груз",uk:"Сипучий вантаж",en:"Dry bulk",pl:"Ładunek sypki"} },
+    level:{ unknown:{ru:"Нужно уточнить",uk:"Потрібно уточнити",en:"Needs clarification",pl:"Do ustalenia"}, learning:{ru:"Учусь",uk:"Навчаюся",en:"Learning",pl:"Uczę się"}, assisted:{ru:"С наставником",uk:"З наставником",en:"With support",pl:"Z pomocą"}, independent:{ru:"Самостоятельно",uk:"Самостійно",en:"Independent",pl:"Samodzielnie"} },
+    language:{ ru:{ru:"Русский",uk:"Російська",en:"Russian",pl:"Rosyjski"}, uk:{ru:"Украинский",uk:"Українська",en:"Ukrainian",pl:"Ukraiński"}, pl:{ru:"Польский",uk:"Польська",en:"Polish",pl:"Polski"}, en:{ru:"Английский",uk:"Англійська",en:"English",pl:"Angielski"}, de:{ru:"Немецкий",uk:"Німецька",en:"German",pl:"Niemiecki"}, nl:{ru:"Нидерландский",uk:"Нідерландська",en:"Dutch",pl:"Niderlandzki"}, fr:{ru:"Французский",uk:"Французька",en:"French",pl:"Francuski"} },
+    languageLevel:{ basic:{ru:"Базовый",uk:"Базовий",en:"Basic",pl:"Podstawowy"}, operational:{ru:"Рабочий",uk:"Робочий",en:"Operational",pl:"Roboczy"}, confident:{ru:"Уверенный",uk:"Впевнений",en:"Confident",pl:"Swobodny"}, native:{ru:"Родной",uk:"Рідний",en:"Native",pl:"Ojczysty"} },
+    country:{ ZZ:{ru:"Открыт к предложениям",uk:"Відкритий до пропозицій",en:"Open to offers",pl:"Otwarty na oferty"}, PL:{ru:"Польша",uk:"Польща",en:"Poland",pl:"Polska"}, DE:{ru:"Германия",uk:"Німеччина",en:"Germany",pl:"Niemcy"}, NL:{ru:"Нидерланды",uk:"Нідерланди",en:"Netherlands",pl:"Niderlandy"}, BE:{ru:"Бельгия",uk:"Бельгія",en:"Belgium",pl:"Belgia"}, FR:{ru:"Франция",uk:"Франція",en:"France",pl:"Francja"}, GB:{ru:"Великобритания",uk:"Велика Британія",en:"United Kingdom",pl:"Wielka Brytania"}, ES:{ru:"Испания",uk:"Іспанія",en:"Spain",pl:"Hiszpania"}, IT:{ru:"Италия",uk:"Італія",en:"Italy",pl:"Włochy"}, CZ:{ru:"Чехия",uk:"Чехія",en:"Czechia",pl:"Czechy"} },
+    route:{ local:{ru:"Местные",uk:"Місцеві",en:"Local",pl:"Lokalne"}, domestic:{ru:"По стране",uk:"По країні",en:"Domestic",pl:"Krajowe"}, international:{ru:"Международные",uk:"Міжнародні",en:"International",pl:"Międzynarodowe"}, any:{ru:"Любые / обсуждается",uk:"Будь-які / обговорюється",en:"Any / negotiable",pl:"Dowolne / do ustalenia"} },
+    routeRegion:{ benelux:{ru:"Бенилюкс",uk:"Бенілюкс",en:"Benelux",pl:"Benelux"}, scandinavia:{ru:"Скандинавия",uk:"Скандинавія",en:"Scandinavia",pl:"Skandynawia"}, europe:{ru:"Вся Европа",uk:"Уся Європа",en:"All Europe",pl:"Cała Europa"} },
+    rotation:{ daily:{ru:"Ежедневно домой",uk:"Щодня додому",en:"Daily home",pl:"Codziennie w domu"}, weekends:{ru:"Выходные дома",uk:"Вихідні вдома",en:"Weekends home",pl:"Weekendy w domu"}, "2_2":{ru:"2/2",uk:"2/2",en:"2/2",pl:"2/2"}, "3_1":{ru:"3/1",uk:"3/1",en:"3/1",pl:"3/1"}, "4_1":{ru:"4/1",uk:"4/1",en:"4/1",pl:"4/1"}, negotiable:{ru:"Обсуждается",uk:"Обговорюється",en:"Negotiable",pl:"Do ustalenia"}, unknown:{ru:"Не указано",uk:"Не вказано",en:"Not provided",pl:"Nie podano"} },
+    homeTime:{ daily:{ru:"Каждый день",uk:"Щодня",en:"Daily",pl:"Codziennie"}, weekly:{ru:"Каждую неделю",uk:"Щотижня",en:"Weekly",pl:"Co tydzień"}, rotation:{ru:"После ротации",uk:"Після ротації",en:"After rotation",pl:"Po rotacji"}, negotiable:{ru:"Обсуждается",uk:"Обговорюється",en:"Negotiable",pl:"Do ustalenia"}, unknown:{ru:"Не указано",uk:"Не вказано",en:"Not provided",pl:"Nie podano"} },
+    pref:{ accepted:{ru:"Готов",uk:"Готовий",en:"Accepted",pl:"Akceptuję"}, negotiable:{ru:"Обсуждается",uk:"Обговорюється",en:"Negotiable",pl:"Do ustalenia"}, excluded:{ru:"Не подходит",uk:"Не підходить",en:"Excluded",pl:"Nie"}, "":{ru:"Не указано",uk:"Не вказано",en:"Not provided",pl:"Nie podano"} },
+    overnight:{ none:{ru:"Без ночёвок",uk:"Без ночівель",en:"No nights away",pl:"Bez noclegów"}, "1_2":{ru:"1–2 ночи",uk:"1–2 ночі",en:"1–2 nights",pl:"1–2 noce"}, "3_5":{ru:"3–5 ночей",uk:"3–5 ночей",en:"3–5 nights",pl:"3–5 nocy"}, longer:{ru:"Дольше недели",uk:"Довше тижня",en:"Longer periods",pl:"Dłuższe okresy"}, negotiable:{ru:"Обсуждается",uk:"Обговорюється",en:"Negotiable",pl:"Do ustalenia"}, unknown:{ru:"Не указано",uk:"Не вказано",en:"Not provided",pl:"Nie podano"} },
+    availability:{ now:{ru:"Сразу",uk:"Одразу",en:"Immediately",pl:"Od zaraz"}, "2_weeks":{ru:"Через 2 недели",uk:"Через 2 тижні",en:"In 2 weeks",pl:"Za 2 tygodnie"}, "4_weeks":{ru:"Через 4 недели",uk:"Через 4 тижні",en:"In 4 weeks",pl:"Za 4 tygodnie"}, date:{ru:"В выбранную дату",uk:"У вибрану дату",en:"On a chosen date",pl:"W wybranym terminie"}, not_looking:{ru:"Пока не ищу",uk:"Поки не шукаю",en:"Not looking now",pl:"Obecnie nie szukam"}, unknown:{ru:"Не указано",uk:"Не вказано",en:"Not provided",pl:"Nie podano"} },
+    contact:{ phone:{ru:"Телефон",uk:"Телефон",en:"Phone",pl:"Telefon"}, email:{ru:"E-mail",uk:"E-mail",en:"Email",pl:"E-mail"}, messenger:{ru:"Мессенджер",uk:"Месенджер",en:"Messenger",pl:"Komunikator"} },
+    training:{ adr:{ru:"ADR",uk:"ADR",en:"ADR",pl:"ADR"}, equipment:{ru:"Новое оборудование",uk:"Нове обладнання",en:"New equipment",pl:"Nowy sprzęt"}, routes:{ru:"Новые маршруты",uk:"Нові маршрути",en:"New routes",pl:"Nowe trasy"} }
+  };
 
-/* =========================
-   2) Toast
-========================= */
-const toastEl = document.getElementById("toast");
-let toastTimer = null;
-function toast(msg){
-  toastEl.textContent = msg;
-  toastEl.classList.add("show");
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(()=> toastEl.classList.remove("show"), 1400);
-}
-
-/* =========================
-   3) Question bank (EDIT HERE)
-========================= */
-const LS_ANS_KEY = "roadline_cv_answers_v1";
-const SHARE_PARAM = "profile";
-const SHARE_VERSION = 2;
-const SUPPORTED_SHARE_VERSIONS = new Set([1, SHARE_VERSION]);
-const QUESTION_BANK = [
-  {
-    id: "workType",
-    type: "single",
-    label: { ru:"Тип работы", uk:"Тип роботи", en:"Work type", pl:"Rodzaj pracy" },
-    options: [
-      { value:"intl",  label:{ru:"Международка", uk:"Міжнародка", en:"International", pl:"Międzynarodowe"}, note:{ru:"EU routes", uk:"Маршрути ЄС", en:"EU routes", pl:"Trasy EU"} },
-      { value:"local", label:{ru:"Работа по стране", uk:"По країні", en:"Domestic", pl:"Krajowe"}, note:{ru:"внутри страны", uk:"в межах країни", en:"within one country", pl:"w jednym kraju"} }
-    ]
-  },
-  {
-    id: "experience",
-    type: "single",
-    label: { ru:"Опыт на C+E", uk:"Досвід на C+E", en:"C+E experience", pl:"Doświadczenie C+E" },
-    options: [
-      { value:"0-1", label:{ru:"до 1 года", uk:"до 1 року", en:"up to 1 year", pl:"do 1 roku"} },
-      { value:"1-3", label:{ru:"1–3 года", uk:"1–3 роки", en:"1–3 years", pl:"1–3 lata"} },
-      { value:"3-5", label:{ru:"3–5 лет", uk:"3–5 років", en:"3–5 years", pl:"3–5 lat"} },
-      { value:"5+",  label:{ru:"более 5 лет", uk:"понад 5 років", en:"5+ years", pl:"ponad 5 lat"} }
-    ]
-  },
-  {
-    id: "trailers",
-    type: "multi",
-    label: { ru:"Тип прицепа", uk:"Тип напівпричепа", en:"Trailer type", pl:"Typ naczepy" },
-    options: [
-      { value:"tautliner", label:{ru:"Тент", uk:"Тент", en:"Tautliner", pl:"Plandeka"}, note:{ru:"tautliner / plandeka", uk:"tautliner / plandeka", en:"tautliner", pl:"plandeka"} },
-      { value:"reefer",    label:{ru:"Рефрижератор", uk:"Рефрижератор", en:"Reefer", pl:"Chłodnia"}, note:{ru:"chłodnia / reefer", uk:"chłodnia / reefer", en:"reefer", pl:"chłodnia"} },
-      { value:"container", label:{ru:"Контейнер", uk:"Контейнер", en:"Container", pl:"Kontener"} },
-      { value:"tanker",    label:{ru:"Цистерна", uk:"Цистерна", en:"Tanker", pl:"Cysterna"} },
-      { value:"carcarrier",label:{ru:"Автовоз", uk:"Автовоз", en:"Car carrier", pl:"Autotransporter"} },
-      { value:"lowbed",    label:{ru:"Низкорамник", uk:"Низькорамний", en:"Low-bed", pl:"Niskopodwoziowa"} }
-    ]
-  },
-  {
-    id: "regions",
-    type: "multi",
-    label: { ru:"География", uk:"Географія", en:"Regions", pl:"Regiony" },
-    options: [
-      { value:"PL",      label:{ru:"Польша", uk:"Польща", en:"Poland", pl:"Polska"} },
-      { value:"DE",      label:{ru:"Германия", uk:"Німеччина", en:"Germany", pl:"Niemcy"} },
-      { value:"FR",      label:{ru:"Франция", uk:"Франція", en:"France", pl:"Francja"} },
-      { value:"BENELUX", label:{ru:"Бенилюкс", uk:"Бенілюкс", en:"Benelux", pl:"Benelux"} },
-      { value:"SCAN",    label:{ru:"Скандинавия", uk:"Скандинавія", en:"Scandinavia", pl:"Skandynawia"} },
-      { value:"EU",      label:{ru:"Вся Европа", uk:"Уся Європа", en:"All Europe", pl:"Cała Europa"} }
-    ]
-  },
-  {
-    id: "schedule",
-    type: "single",
-    label: { ru:"Формат работы", uk:"Формат роботи", en:"Work rotation", pl:"System pracy" },
-    options: [
-      { value:"2/2",     label:{ru:"2/2", uk:"2/2", en:"2/2", pl:"2/2"} },
-      { value:"3/1",     label:{ru:"3/1", uk:"3/1", en:"3/1", pl:"3/1"} },
-      { value:"4/1",     label:{ru:"4/1", uk:"4/1", en:"4/1", pl:"4/1"} },
-      { value:"weekends",label:{ru:"Выходные дома", uk:"Вихідні вдома", en:"Weekends home", pl:"Weekendy w domu"} },
-      { value:"any",     label:{ru:"Без разницы", uk:"Без різниці", en:"Any", pl:"Dowolnie"} }
-    ]
-  },
-  {
-    id: "documents",
-    type: "multi",
-    label: { ru:"Документы", uk:"Документи", en:"Documents", pl:"Dokumenty" },
-    options: [
-      { value:"code95", label:{ru:"Code 95", uk:"Code 95", en:"Code 95", pl:"Code 95"} },
-      { value:"card",   label:{ru:"Карта водителя", uk:"Карта водія", en:"Driver card", pl:"Karta kierowcy"} },
-      { value:"adr",    label:{ru:"ADR", uk:"ADR", en:"ADR", pl:"ADR"} }
-    ]
-  },
-  {
-    id: "statusEU",
-    type: "single",
-    label: { ru:"Статус в ЕС (право на работу)", uk:"Статус в ЄС (право на роботу)", en:"EU work status", pl:"Status pracy w UE" },
-    options: [
-      { value:"euCitizen", label:{ru:"Гражданство ЕС", uk:"Громадянство ЄС", en:"EU citizenship", pl:"Obywatelstwo UE"} },
-      { value:"karta",     label:{ru:"Карта побыту / ВНЖ", uk:"Karta pobytu / ВНЖ", en:"Residence card", pl:"Karta pobytu"} },
-      { value:"visa",      label:{ru:"Рабочая виза/разрешение", uk:"Робоча віза/дозвіл", en:"Work visa/permit", pl:"Wiza/zezwolenie"} },
-      { value:"process",   label:{ru:"В процессе оформления", uk:"У процесі оформлення", en:"In progress", pl:"W trakcie"} }
-    ]
-  },
-  { id:"contact", type:"contact", label:{ru:"Контакт", uk:"Контакт", en:"Contact", pl:"Kontakt"} }
-];
-
-/* =========================
-   4) State
-========================= */
-function encodeProfile(answers){
-  const json = JSON.stringify({ v: SHARE_VERSION, answers });
-  const bytes = new TextEncoder().encode(json);
-  let binary = "";
-  bytes.forEach(byte=> { binary += String.fromCharCode(byte); });
-  return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
-}
-function decodeProfile(value){
-  try{
-    const base64 = value.replace(/-/g, "+").replace(/_/g, "/");
-    const padded = base64.padEnd(Math.ceil(base64.length / 4) * 4, "=");
-    const binary = atob(padded);
-    const bytes = Uint8Array.from(binary, char=>char.charCodeAt(0));
-    const data = JSON.parse(new TextDecoder().decode(bytes));
-    if(!SUPPORTED_SHARE_VERSIONS.has(data.v) || !data.answers || typeof data.answers !== "object") return null;
-    return sanitizeProfessionalAnswers(data.answers);
-  }catch(e){
-    return null;
+  function detectLocale(){
+    const saved = localStorage.getItem(LANG_KEY);
+    if(LOCALES.includes(saved)) return saved;
+    const raw = (navigator.language || "en").toLowerCase();
+    if(raw.startsWith("ru")) return "ru";
+    if(raw.startsWith("uk")) return "uk";
+    if(raw.startsWith("pl")) return "pl";
+    return "en";
   }
-}
-function sanitizeProfessionalAnswers(raw){
-  const clean = {};
-  QUESTION_BANK.forEach(q=>{
-    if(q.type === "single"){
-      const allowed = q.options.some(opt=>opt.value === raw[q.id]);
-      if(allowed) clean[q.id] = raw[q.id];
-    }
-    if(q.type === "multi" && Array.isArray(raw[q.id])){
-      const allowed = new Set(q.options.map(opt=>opt.value));
-      const values = [...new Set(raw[q.id].filter(value=>allowed.has(value)))];
-      if(values.length) clean[q.id] = values;
-    }
-  });
-  return clean;
-}
-function loadSharedAnswers(){
-  const currentUrl = new URL(location.href);
-  const encoded = currentUrl.searchParams.get(SHARE_PARAM);
-  const answers = encoded ? decodeProfile(encoded) : null;
-  if(!answers) return null;
 
-  // Rewrite legacy or noisy share URLs immediately. This cannot undo an
-  // already-requested legacy URL, but it prevents contacts from remaining in
-  // browser history or being copied again from the address bar.
-  const safeUrl = new URL(currentUrl.origin + currentUrl.pathname);
-  safeUrl.searchParams.set(SHARE_PARAM, encodeProfile(answers));
-  safeUrl.hash = "result";
-  if(safeUrl.href !== currentUrl.href) history.replaceState(null, "", safeUrl);
-  return answers;
-}
-function loadAnswers(){
-  try{
-    const raw = localStorage.getItem(LS_ANS_KEY);
-    return raw ? JSON.parse(raw) : {};
-  }catch(e){ return {}; }
-}
-function saveAnswers(){
-  if(state.isSharedView) return;
-  localStorage.setItem(LS_ANS_KEY, JSON.stringify(state.answers));
-}
-const sharedAnswers = loadSharedAnswers();
-const state = {
-  lang: detectLang(),
-  step: sharedAnswers ? QUESTION_BANK.length - 1 : 0,
-  answers: sharedAnswers || loadAnswers(),
-  isSharedView: !!sharedAnswers
-};
+  function t(key, locale = state.lang){ return (TEXT[locale] && TEXT[locale][key]) || TEXT.en[key] || key; }
+  function valueLabel(group, code, locale = state.lang){
+    const item = VALUE_LABELS[group] && VALUE_LABELS[group][code];
+    return item ? (item[locale] || item.en) : (code || t("unknown", locale));
+  }
+  function node(tag, className, text){
+    const element = document.createElement(tag);
+    if(className) element.className = className;
+    if(text !== undefined) element.textContent = text;
+    return element;
+  }
+  function option(value, label){ const item = document.createElement("option"); item.value = value; item.textContent = label; return item; }
 
-/* =========================
-   5) Helpers
-========================= */
-function getText(ru, uk, en, pl){
-  const m = {ru, uk, en, pl};
-  return m[state.lang] || en;
-}
-function scrollIntoViewSmooth(selector){
-  const el = document.querySelector(selector);
-  if(el) el.scrollIntoView({behavior:"smooth", block:"start"});
-}
+  let migrationNotice = false;
+  function loadProfile(locale){
+    try{
+      const raw = localStorage.getItem(PROFILE_KEY);
+      if(raw){
+        const profile = model.sanitizeProfile(JSON.parse(raw), {locale});
+        const legacy = localStorage.getItem(LEGACY_KEY);
+        if(!profile.migration && legacy){
+          try{
+            const restored = model.backfillLegacyMigration(profile, JSON.parse(legacy), {locale});
+            localStorage.setItem(PROFILE_KEY, JSON.stringify(restored));
+            migrationNotice = true;
+            return restored;
+          }catch(error){ return profile; }
+        }
+        return profile;
+      }
+    }catch(error){ /* use a clean profile */ }
+    try{
+      const legacy = localStorage.getItem(LEGACY_KEY);
+      if(legacy){
+        const migrated = model.migrateLegacyAnswers(JSON.parse(legacy), {locale});
+        localStorage.setItem(PROFILE_KEY, JSON.stringify(migrated));
+        JSON.parse(localStorage.getItem(PROFILE_KEY));
+        migrationNotice = true;
+        return migrated;
+      }
+    }catch(error){ /* preserve legacy data and start without deleting it */ }
+    return model.createEmptyProfile(locale);
+  }
 
-/* =========================
-   6) UI Strings
-========================= */
-function updateUIStrings(){
-  document.getElementById("backBtn").textContent = getText("Назад","Назад","Back","Wstecz");
-  document.getElementById("nextBtn").textContent = getText("Далее","Далі","Next","Dalej");
-  document.getElementById("resetAllBtn").textContent = getText("Сбросить ответы","Скинути відповіді","Reset answers","Resetuj odpowiedzi");
-  document.getElementById("copyLinkBtn").textContent = getText("Скопировать ссылку","Скопіювати посилання","Copy link","Kopiuj link");
-  document.getElementById("copyTextBtn").textContent = getText("Скопировать текст","Скопіювати текст","Copy text","Kopiuj tekst");
-  document.getElementById("resetAllBtn").disabled = state.isSharedView;
-  document.getElementById("editBtn").textContent = state.isSharedView
-    ? getText("Создать своё резюме","Створити своє резюме","Build my resume","Stwórz moje CV")
-    : getText("Редактировать ответы","Редагувати відповіді","Edit answers","Edytuj odpowiedzi");
-  const sharedNotice = document.getElementById("sharedNotice");
-  sharedNotice.hidden = !state.isSharedView;
-  sharedNotice.textContent = getText(
-    "Вы смотрите публичный профессиональный профиль. Имя и контактные данные владельца не включены. Профиль доступен только для чтения.",
-    "Ви переглядаєте публічний професійний профіль. Ім’я та контактні дані власника не включені. Профіль доступний лише для читання.",
-    "You are viewing a public professional profile. The owner's name and contact details are not included. This profile is read-only.",
-    "Oglądasz publiczny profil zawodowy. Imię i dane kontaktowe właściciela nie są dołączone. Profil jest tylko do odczytu."
-  );
-}
+  function loadShared(){
+    const current = new URL(location.href);
+    const encoded = current.searchParams.get(SHARE_PARAM);
+    if(!encoded) return null;
+    const decoded = model.decodeSharedProfile(encoded, {locale:detectLocale()});
+    if(!decoded) return null;
+    const safe = new URL(current.origin + current.pathname);
+    safe.searchParams.set(SHARE_PARAM, model.encodePublicProfile(decoded.publicProfile));
+    safe.hash = "public-profile";
+    if(safe.href !== current.href) history.replaceState(null, "", safe);
+    return decoded.publicProfile;
+  }
 
-/* =========================
-   7) Wizard rendering
-========================= */
-const questionArea = document.getElementById("questionArea");
-const stepPill = document.getElementById("stepPill");
-const stepBar = document.getElementById("stepBar");
+  const sharedProfile = loadShared();
+  const initialLang = detectLocale();
+  const storedStep = Number(localStorage.getItem(STEP_KEY));
+  const state = {
+    lang:initialLang,
+    profile:loadProfile(initialLang),
+    step:Number.isInteger(storedStep) && storedStep >= 0 && storedStep < STEP_COUNT ? storedStep : 0,
+    sharedProfile,
+    toastTimer:null
+  };
 
-function totalSteps(){ return QUESTION_BANK.length; }
+  function toast(message){
+    const target = document.getElementById("toast");
+    target.textContent = message;
+    target.classList.add("show");
+    clearTimeout(state.toastTimer);
+    state.toastTimer = setTimeout(()=>target.classList.remove("show"), 2200);
+  }
 
-function renderQuestion(){
-  const q = QUESTION_BANK[state.step];
-  const total = totalSteps();
-  const stepN = state.step + 1;
+  function saveProfile(){
+    state.profile.locale = state.lang;
+    state.profile.updatedAt = new Date().toISOString();
+    state.profile = model.sanitizeProfile(state.profile, {locale:state.lang});
+    localStorage.setItem(PROFILE_KEY, JSON.stringify(state.profile));
+    localStorage.setItem(STEP_KEY, String(state.step));
+    const status = document.getElementById("saveState");
+    status.textContent = t("saved");
+    renderOutputs();
+  }
 
-  stepPill.textContent = getText(`Шаг ${stepN}/${total}`, `Крок ${stepN}/${total}`, `Step ${stepN}/${total}`, `Krok ${stepN}/${total}`);
-  stepBar.style.width = `${Math.round((state.step / (total-1)) * 100)}%`;
+  function update(mutator, rerender = false){
+    mutator(state.profile);
+    saveProfile();
+    if(rerender) renderStep();
+  }
 
-  questionArea.innerHTML = "";
+  function applyTranslations(){
+    document.documentElement.lang = state.lang;
+    document.querySelectorAll("[data-i18n]").forEach(element=>{ element.textContent = t(element.dataset.i18n); });
+    document.querySelectorAll("[data-i18n-placeholder]").forEach(element=>{ element.placeholder = t(element.dataset.i18nPlaceholder); });
+    document.getElementById("langSelect").value = state.lang;
+  }
 
-  const title = document.createElement("div");
-  title.className = "qTitle";
-  title.textContent = (q.label[state.lang] || q.label.en);
-  questionArea.appendChild(title);
+  let generatedFieldId = 0;
+  function makeField(labelText, input, helpText){
+    const wrap = node("div", "field");
+    const label = node("label", "", labelText);
+    if(!input.id) input.id = `roadline-field-${++generatedFieldId}`;
+    label.htmlFor = input.id;
+    if(input.id) label.htmlFor = input.id;
+    wrap.append(label, input);
+    if(helpText) wrap.append(node("p", "field-help", helpText));
+    return wrap;
+  }
 
-  if(q.type === "single" || q.type === "multi"){
-    const wrap = document.createElement("div");
-    wrap.className = "options";
-
-    const current = state.answers[q.id] ?? (q.type === "multi" ? [] : "");
-
-    q.options.forEach(opt=>{
-      const row = document.createElement("label");
-      row.className = "opt";
-
+  function makeRadioGroup(config){
+    const fieldset = node("fieldset", "field-group");
+    const legend = node("legend", "field-label", config.label);
+    fieldset.appendChild(legend);
+    if(config.help) fieldset.appendChild(node("p", "field-help", config.help));
+    const grid = node("div", `option-grid ${config.three ? "three" : ""}`);
+    config.options.forEach(item=>{
+      const label = node("label", "option-card");
       const input = document.createElement("input");
-      input.type = (q.type === "multi") ? "checkbox" : "radio";
-      input.name = q.id;
-      input.value = opt.value;
-      input.disabled = state.isSharedView;
+      input.type = "radio";
+      input.name = config.name;
+      input.value = item.value;
+      input.checked = config.value === item.value;
+      input.addEventListener("change", ()=>config.onChange(item.value));
+      label.append(input, node("span", "", item.label));
+      grid.appendChild(label);
+    });
+    fieldset.appendChild(grid);
+    return fieldset;
+  }
 
-      if(q.type === "multi"){
-        input.checked = Array.isArray(current) && current.includes(opt.value);
-      }else{
-        input.checked = current === opt.value;
-      }
-
-      const textBox = document.createElement("div");
-      const lbl = document.createElement("div");
-      lbl.className = "lbl";
-      lbl.textContent = (opt.label[state.lang] || opt.label.en);
-      textBox.appendChild(lbl);
-
-      if(opt.note){
-        const sub = document.createElement("div");
-        sub.className = "sub";
-        sub.textContent = (opt.note[state.lang] || opt.note.en);
-        textBox.appendChild(sub);
-      }
-
-      row.appendChild(input);
-      row.appendChild(textBox);
-
-      row.addEventListener("click", (e)=>{
-        if(state.isSharedView) return;
-        if(e.target.tagName.toLowerCase() !== "input"){
-          if(q.type !== "multi") input.checked = true;
-          else input.checked = !input.checked;
-        }
-
-        if(q.type === "multi"){
-          const arr = new Set(Array.isArray(state.answers[q.id]) ? state.answers[q.id] : []);
-          if(input.checked) arr.add(opt.value); else arr.delete(opt.value);
-          state.answers[q.id] = Array.from(arr);
-        }else{
-          state.answers[q.id] = opt.value;
-        }
-        saveAnswers();
-        renderResume();
-        updateShareLinks();
+  function makeCheckboxGroup(config){
+    const fieldset = node("fieldset", "field-group");
+    fieldset.appendChild(node("legend", "field-label", config.label));
+    if(config.help) fieldset.appendChild(node("p", "field-help", config.help));
+    const grid = node("div", `option-grid ${config.three ? "three" : ""}`);
+    config.options.forEach(item=>{
+      const label = node("label", "option-card");
+      const input = document.createElement("input");
+      input.type = "checkbox";
+      input.value = item.value;
+      input.checked = config.values.includes(item.value);
+      input.addEventListener("change", ()=>{
+        let next = config.values.filter(value=>value !== item.value);
+        if(input.checked) next.push(item.value);
+        config.onChange(next, item.value, input.checked);
       });
-
-      wrap.appendChild(row);
+      label.append(input, node("span", "", item.label));
+      grid.appendChild(label);
     });
-
-    questionArea.appendChild(wrap);
+    fieldset.appendChild(grid);
+    return fieldset;
   }
 
-  if(q.type === "contact"){
-    const box = document.createElement("div");
-    box.className = "stack";
-    box.style.gap = "10px";
-    box.style.marginTop = "8px";
+  function makeSelect(id, items, selected, includeBlank = true){
+    const select = document.createElement("select");
+    select.id = id;
+    select.className = "select-control";
+    if(includeBlank) select.appendChild(option("", "—"));
+    items.forEach(item=>select.appendChild(option(item.value, item.label)));
+    select.value = selected || "";
+    return select;
+  }
 
-    const name = document.createElement("input");
-    name.className = "input";
-    name.placeholder = getText("Имя","Ім’я","Name","Imię");
-    name.value = state.answers.contactName || "";
-    name.disabled = state.isSharedView;
+  function statusOptions(includeEmpty = false){
+    const codes = includeEmpty ? ["", "valid", "expired", "pending", "absent", "unknown"] : ["valid", "expired", "pending", "absent", "unknown"];
+    return codes.map(value=>({value,label:valueLabel("status", value)}));
+  }
 
-    const phone = document.createElement("input");
-    phone.className = "input";
-    phone.placeholder = getText("Телефон / WhatsApp / Telegram","Телефон / WhatsApp / Telegram","Phone / WhatsApp / Telegram","Telefon / WhatsApp / Telegram");
-    phone.value = state.answers.contactPhone || "";
-    phone.disabled = state.isSharedView;
+  function renderQualification(container, code, labelKey, extra){
+    const qualification = state.profile.qualifications[code];
+    const section = node("section", "subsection qualification-block");
+    section.appendChild(makeRadioGroup({
+      name:`status-${code}`, label:t(labelKey), options:statusOptions(), value:qualification.status,
+      onChange:value=>update(profile=>{ profile.qualifications[code].status = value; }, true)
+    }));
+    const details = node("details", "details-panel");
+    if(qualification.issuingCountry || qualification.validUntil || (code === "cpc" && qualification.cpcType)) details.open = true;
+    details.appendChild(node("summary", "", t("optionalDetails")));
+    const grid = node("div", "details-grid");
+    if(code === "cpc"){
+      const cpc = makeSelect(`cpc-type`, ["eu_code_95","uk_national","uk_international","other","unknown"].map(value=>({value,label:valueLabel("cpc",value)})), qualification.cpcType);
+      cpc.addEventListener("change", ()=>update(profile=>{ profile.qualifications.cpc.cpcType = cpc.value; }));
+      grid.appendChild(makeField(t("cpcType"), cpc));
+    }
+    const country = document.createElement("input");
+    country.id = `country-${code}`; country.className = "text-control"; country.maxLength = 2; country.value = qualification.issuingCountry; country.placeholder = "PL"; country.autocapitalize = "characters";
+    country.addEventListener("input", ()=>update(profile=>{ profile.qualifications[code].issuingCountry = country.value.toUpperCase(); }));
+    const date = document.createElement("input");
+    date.id = `date-${code}`; date.className = "text-control"; date.type = "date"; date.value = qualification.validUntil;
+    date.addEventListener("change", ()=>update(profile=>{ profile.qualifications[code].validUntil = date.value; }));
+    grid.append(makeField(t("country"), country), makeField(t("validUntil"), date));
+    if(extra) extra(grid, details);
+    details.appendChild(grid);
+    details.appendChild(node("p", "field-help", t("noUpload")));
+    section.appendChild(details);
+    container.appendChild(section);
+  }
 
-    name.addEventListener("input", ()=>{
-      state.answers.contactName = name.value.trim();
-      saveAnswers(); renderResume(); updateShareLinks();
+  function renderQualifications(container){
+    const callout = node("div", "details-panel");
+    callout.append(node("strong", "", t("profession")), node("p", "field-help", t("professionValue")));
+    container.appendChild(callout);
+    renderQualification(container, "ce", "ceStatus");
+    renderQualification(container, "cpc", "cpcStatus");
+    renderQualification(container, "tachograph", "tachoStatus");
+    renderQualification(container, "adr", "adrStatus", (grid)=>{
+      const wrapper = node("div", "wide");
+      wrapper.appendChild(makeCheckboxGroup({
+        label:t("adrSpecialisations"), values:state.profile.qualifications.adr.specialisations,
+        options:["base","tank","class_1","class_7"].map(value=>({value,label:valueLabel("adr",value)})),
+        onChange:values=>update(profile=>{ profile.qualifications.adr.specialisations = values; })
+      }));
+      grid.appendChild(wrapper);
     });
-    phone.addEventListener("input", ()=>{
-      state.answers.contactPhone = phone.value.trim();
-      saveAnswers(); renderResume(); updateShareLinks();
+  }
+
+  function renderExperience(container){
+    container.appendChild(makeRadioGroup({
+      name:"ce-range", label:t("ceExperience"), help:t("ceExperienceHelp"), three:true,
+      value:state.profile.experience.ceRange,
+      options:["none","lt_6m","6_12m","1_2y","2_5y","5y_plus"].map(value=>({value,label:valueLabel("experience",value)})),
+      onChange:value=>update(profile=>{ profile.experience.ceRange = value; })
+    }));
+    container.appendChild(makeRadioGroup({
+      name:"equipment-answer", label:t("equipmentAnswer"),
+      value:state.profile.experience.equipmentAnswer,
+      options:[{value:"none",label:t("noneEquipment")},{value:"selected",label:t("selectEquipment")}],
+      onChange:value=>update(profile=>{
+        profile.experience.equipmentAnswer = value;
+        if(value === "none"){
+          profile.experience.equipment = [];
+          profile.experience.cargo = [];
+        }
+      }, true)
+    }));
+    if(state.profile.experience.equipmentAnswer === "selected"){
+      const selectedCodes = state.profile.experience.equipment.map(item=>item.code);
+      container.appendChild(makeCheckboxGroup({
+        label:t("equipment"), help:t("equipmentHelp"), values:selectedCodes, three:true,
+        options:Object.keys(VALUE_LABELS.equipment).map(value=>({value,label:valueLabel("equipment",value)})),
+        onChange:values=>update(profile=>{
+          profile.experience.equipment = values.map(code=>profile.experience.equipment.find(item=>item.code === code) || {code,level:"unknown"});
+        }, true)
+      }));
+      if(state.profile.experience.equipment.length){
+        const list = node("div", "equipment-list");
+        state.profile.experience.equipment.forEach(item=>{
+          const row = node("div", "equipment-row");
+          row.appendChild(node("strong", "", valueLabel("equipment", item.code)));
+          const select = makeSelect(`equipment-level-${item.code}`, ["unknown","learning","assisted","independent"].map(value=>({value,label:valueLabel("level",value)})), item.level, false);
+          select.addEventListener("change", ()=>update(profile=>{
+            const target = profile.experience.equipment.find(current=>current.code === item.code);
+            if(target) target.level = select.value;
+          }, true));
+          row.appendChild(makeField(t("experienceLevel"), select));
+          list.appendChild(row);
+        });
+        container.appendChild(list);
+      }
+      const selectedCargo = state.profile.experience.cargo.map(item=>item.code);
+      container.appendChild(makeCheckboxGroup({
+        label:t("cargo"), help:t("cargoHelp"), values:selectedCargo, three:true,
+        options:Object.keys(VALUE_LABELS.cargo).map(value=>({value,label:valueLabel("cargo",value)})),
+        onChange:values=>update(profile=>{
+          profile.experience.cargo = values.map(code=>profile.experience.cargo.find(item=>item.code === code) || {code,level:"unknown"});
+        }, true)
+      }));
+      if(state.profile.experience.cargo.length){
+        const cargoList = node("div", "equipment-list");
+        state.profile.experience.cargo.forEach(item=>{
+          const row = node("div", "equipment-row");
+          row.appendChild(node("strong", "", valueLabel("cargo", item.code)));
+          const select = makeSelect(`cargo-level-${item.code}`, ["unknown","learning","assisted","independent"].map(value=>({value,label:valueLabel("level",value)})), item.level, false);
+          select.addEventListener("change", ()=>update(profile=>{
+            const target = profile.experience.cargo.find(current=>current.code === item.code);
+            if(target) target.level = select.value;
+          }, true));
+          row.appendChild(makeField(t("experienceLevel"), select));
+          cargoList.appendChild(row);
+        });
+        container.appendChild(cargoList);
+      }
+    }
+
+    const needsTraining = state.profile.qualifications.adr.status !== "valid" ||
+      [...state.profile.experience.equipment, ...state.profile.experience.cargo].some(item=>item.level !== "independent");
+    if(needsTraining){
+      container.appendChild(makeCheckboxGroup({
+        label:t("training"), help:t("trainingCopy"), values:state.profile.training,
+        options:["adr","equipment","routes"].map(value=>({value,label:valueLabel("training",value)})),
+        onChange:values=>update(profile=>{ profile.training = values; })
+      }));
+    }
+
+    const historySection = node("section", "subsection");
+    historySection.append(node("h3", "", t("optionalHistory")), node("p", "", t("optionalHistoryCopy")));
+    const list = node("div", "history-list");
+    state.profile.experience.employmentHistory.forEach((entry,index)=>{
+      const card = node("div", "history-card");
+      const fields = [
+        ["employer", "text", "employer"], ["role", "text", "role"], ["startMonth", "month", "startMonth"], ["endMonth", "month", "endMonth"]
+      ];
+      fields.forEach(([key,type,labelKey])=>{
+        const input = document.createElement("input"); input.type = type; input.className = "text-control"; input.value = entry[key] || ""; input.maxLength = 80;
+        input.addEventListener("input", ()=>update(profile=>{ profile.experience.employmentHistory[index][key] = input.value; }));
+        card.appendChild(makeField(t(labelKey), input));
+      });
+      const summary = document.createElement("textarea"); summary.className = "text-control"; summary.maxLength = 240; summary.value = entry.summary || "";
+      summary.addEventListener("input", ()=>update(profile=>{ profile.experience.employmentHistory[index].summary = summary.value; }));
+      const wide = makeField(t("taskSummary"), summary); wide.classList.add("wide"); card.appendChild(wide);
+      const remove = node("button", "remove-button wide", t("remove")); remove.type = "button";
+      remove.addEventListener("click", ()=>update(profile=>{ profile.experience.employmentHistory.splice(index,1); }, true));
+      card.appendChild(remove); list.appendChild(card);
     });
-
-    box.appendChild(name);
-    box.appendChild(phone);
-    questionArea.appendChild(box);
+    historySection.appendChild(list);
+    const add = node("button", "button ghost", t("addJob")); add.type = "button";
+    add.addEventListener("click", ()=>update(profile=>{ profile.experience.employmentHistory.push({employer:"",role:"",startMonth:"",endMonth:"",summary:""}); }, true));
+    historySection.appendChild(add); container.appendChild(historySection);
   }
 
-  const backBtn = document.getElementById("backBtn");
-  const nextBtn = document.getElementById("nextBtn");
-  backBtn.disabled = state.isSharedView || state.step === 0;
-  nextBtn.disabled = state.isSharedView;
-  backBtn.style.opacity = backBtn.disabled ? .55 : 1;
-}
-
-function validateStep(){
-  return validateQuestion(QUESTION_BANK[state.step]);
-}
-function validateQuestion(q){
-  if(q.type === "single") return !!state.answers[q.id];
-  if(q.type === "multi") return Array.isArray(state.answers[q.id]) && state.answers[q.id].length > 0;
-  if(q.type === "contact"){
-    return (state.answers.contactName && state.answers.contactName.length >= 2) &&
-           (state.answers.contactPhone && state.answers.contactPhone.length >= 6);
+  function renderLanguages(container){
+    container.appendChild(node("p", "field-help", t("workingLanguagesHelp")));
+    const values = state.profile.workingLanguages.map(item=>item.code);
+    container.appendChild(makeCheckboxGroup({
+      label:t("workingLanguages"), values, three:true,
+      options:Object.keys(VALUE_LABELS.language).map(value=>({value,label:valueLabel("language",value)})),
+      onChange:next=>update(profile=>{ profile.workingLanguages = next.map(code=>profile.workingLanguages.find(item=>item.code === code) || {code,level:"operational"}); }, true)
+    }));
+    const list = node("div", "language-list");
+    state.profile.workingLanguages.forEach(item=>{
+      const row = node("div", "language-row");
+      row.appendChild(node("strong", "", valueLabel("language",item.code)));
+      const select = makeSelect(`language-level-${item.code}`, ["basic","operational","confident","native"].map(value=>({value,label:valueLabel("languageLevel",value)})), item.level, false);
+      select.addEventListener("change", ()=>update(profile=>{
+        const target = profile.workingLanguages.find(current=>current.code === item.code);
+        if(target) target.level = select.value;
+      }));
+      row.appendChild(makeField(t("level"),select)); list.appendChild(row);
+    });
+    container.appendChild(list);
   }
-  return true;
-}
 
-function isProfileComplete(){
-  return QUESTION_BANK.every(validateQuestion);
-}
+  function countryOptions(){ return Object.keys(VALUE_LABELS.country).map(value=>({value,label:valueLabel("country",value)})); }
 
-function goToFirstIncompleteStep(){
-  const index = QUESTION_BANK.findIndex(q=>!validateQuestion(q));
-  if(index >= 0){
-    state.step = index;
-    renderQuestion();
-    scrollIntoViewSmooth("#builder");
+  function renderGeography(container){
+    container.appendChild(node("p", "field-help", t("geographyHelp")));
+    const grid = node("div", "details-grid");
+    const country = makeSelect("base-country", countryOptions(), state.profile.preferences.baseCountry);
+    country.addEventListener("change", ()=>update(profile=>{ profile.preferences.baseCountry = country.value; }));
+    const city = document.createElement("input"); city.id = "base-city"; city.className = "text-control"; city.maxLength = 80; city.value = state.profile.preferences.baseCity;
+    city.addEventListener("input", ()=>update(profile=>{ profile.preferences.baseCity = city.value; }));
+    grid.append(makeField(t("baseCountry"),country), makeField(t("baseCity"),city)); container.appendChild(grid);
+    container.appendChild(makeCheckboxGroup({
+      label:t("routes"), values:state.profile.preferences.routeTypes,
+      options:["local","domestic","international","any"].map(value=>({value,label:valueLabel("route",value)})),
+      onChange:(values,changed,checked)=>update(profile=>{
+        if(changed === "any" && checked) profile.preferences.routeTypes = ["any"];
+        else profile.preferences.routeTypes = values.filter(value=>value !== "any");
+      }, true)
+    }));
+    container.appendChild(makeCheckboxGroup({
+      label:t("routeRegions"), values:state.profile.preferences.routeRegions, three:true,
+      options:["benelux","scandinavia","europe"].map(value=>({value,label:valueLabel("routeRegion",value)})),
+      onChange:values=>update(profile=>{ profile.preferences.routeRegions = values; })
+    }));
+    container.appendChild(makeCheckboxGroup({
+      label:t("routeCountries"), values:state.profile.preferences.routeCountries, three:true,
+      options:countryOptions().filter(item=>item.value !== "ZZ"),
+      onChange:values=>update(profile=>{ profile.preferences.routeCountries = values; })
+    }));
   }
-}
 
-document.getElementById("nextBtn").addEventListener("click", ()=>{
-  if(!validateStep()){
-    toast(getText("Заполни этот шаг","Заповни цей крок","Complete this step","Uzupełnij ten krok"));
-    return;
+  function renderPreferences(container){
+    container.appendChild(makeRadioGroup({ name:"rotation", label:t("rotation"), three:true, value:state.profile.preferences.rotation,
+      options:["daily","weekends","2_2","3_1","4_1","negotiable"].map(value=>({value,label:valueLabel("rotation",value)})),
+      onChange:value=>update(profile=>{ profile.preferences.rotation = value; }) }));
+    container.appendChild(makeRadioGroup({ name:"home-time", label:t("homeTime"), value:state.profile.preferences.homeTime,
+      options:["daily","weekly","rotation","negotiable"].map(value=>({value,label:valueLabel("homeTime",value)})),
+      onChange:value=>update(profile=>{ profile.preferences.homeTime = value; }) }));
+    [["day","dayShift"],["night","nightShift"],["weekends","weekends"]].forEach(([key,labelKey])=>{
+      container.appendChild(makeRadioGroup({ name:`shift-${key}`, label:t(labelKey), value:state.profile.preferences.shifts[key],
+        options:["accepted","negotiable","excluded"].map(value=>({value,label:valueLabel("pref",value)})),
+        onChange:value=>update(profile=>{ profile.preferences.shifts[key] = value; }) }));
+    });
+    container.appendChild(makeRadioGroup({ name:"overnights", label:t("overnights"), three:true, value:state.profile.preferences.overnights,
+      options:["none","1_2","3_5","longer","negotiable"].map(value=>({value,label:valueLabel("overnight",value)})),
+      onChange:value=>update(profile=>{ profile.preferences.overnights = value; }) }));
+    container.appendChild(makeRadioGroup({ name:"availability", label:t("availability"), three:true, value:state.profile.preferences.availability.type,
+      options:["now","2_weeks","4_weeks","date","not_looking"].map(value=>({value,label:valueLabel("availability",value)})),
+      onChange:value=>update(profile=>{ profile.preferences.availability.type = value; if(value !== "date") profile.preferences.availability.date = ""; }, true) }));
+    if(state.profile.preferences.availability.type === "date"){
+      const date = document.createElement("input"); date.type = "date"; date.className = "text-control"; date.value = state.profile.preferences.availability.date;
+      date.addEventListener("change", ()=>update(profile=>{ profile.preferences.availability.date = date.value; }));
+      container.appendChild(makeField(t("availabilityDate"),date));
+    }
   }
-  if(state.step < totalSteps()-1){
-    state.step++;
-    renderQuestion();
-    scrollIntoViewSmooth("#builder");
-  }else{
-    scrollIntoViewSmooth("#result");
+
+  function renderReview(container){
+    const completion = model.validateProfessionalProfile(state.profile);
+    const banner = node("div", "details-panel");
+    banner.appendChild(node("strong", "", completion.valid ? t("reviewReady") : t("reviewNotReady")));
+    banner.appendChild(node("p", "field-help", t("contactOptional")));
+    container.appendChild(banner);
+    const displayName = document.createElement("input"); displayName.className = "text-control"; displayName.maxLength = 40; displayName.value = state.profile.publicIdentity.displayName; displayName.placeholder = "Driver C+E";
+    displayName.addEventListener("input", ()=>update(profile=>{ profile.publicIdentity.displayName = displayName.value; }));
+    container.appendChild(makeField(t("displayName"),displayName,t("displayNameHelp")));
+    const privateSection = node("section", "subsection");
+    privateSection.append(node("h3", "", t("privateCv")), node("p", "", t("privateOnly")));
+    const cvName = document.createElement("input"); cvName.className = "text-control"; cvName.maxLength = 80; cvName.autocomplete = "name"; cvName.value = state.profile.privateIdentity.cvName;
+    cvName.addEventListener("input", ()=>update(profile=>{ profile.privateIdentity.cvName = cvName.value; }));
+    privateSection.appendChild(makeField(t("cvName"),cvName));
+    const contactType = makeSelect("contact-type", ["phone","email","messenger"].map(value=>({value,label:valueLabel("contact",value)})), state.profile.privateIdentity.contact.type);
+    contactType.addEventListener("change", ()=>update(profile=>{ profile.privateIdentity.contact.type = contactType.value; }));
+    const contactValue = document.createElement("input"); contactValue.className = "text-control"; contactValue.maxLength = 120; contactValue.value = state.profile.privateIdentity.contact.value; contactValue.autocomplete = "off";
+    contactValue.addEventListener("input", ()=>update(profile=>{ profile.privateIdentity.contact.value = contactValue.value; }));
+    const bestTime = document.createElement("input"); bestTime.className = "text-control"; bestTime.maxLength = 80; bestTime.value = state.profile.privateIdentity.contact.bestTime;
+    bestTime.addEventListener("input", ()=>update(profile=>{ profile.privateIdentity.contact.bestTime = bestTime.value; }));
+    const grid = node("div", "details-grid");
+    grid.append(makeField(t("contactType"),contactType),makeField(t("contactValue"),contactValue),makeField(t("bestTime"),bestTime));
+    privateSection.appendChild(grid); container.appendChild(privateSection);
   }
-});
 
-document.getElementById("backBtn").addEventListener("click", ()=>{
-  if(state.step > 0){
-    state.step--;
-    renderQuestion();
-    scrollIntoViewSmooth("#builder");
+  const STEP_RENDERERS = [renderQualifications,renderExperience,renderLanguages,renderGeography,renderPreferences,renderReview];
+
+  function renderStepNavigation(){
+    const list = document.getElementById("stepList"); list.replaceChildren();
+    t("stepNames").forEach((name,index)=>{
+      const item = document.createElement("li");
+      const button = document.createElement("button"); button.type = "button";
+      if(index === state.step) button.classList.add("active");
+      if(index < state.step || model.validateStep(state.profile,index).valid) button.classList.add("done");
+      button.append(node("span","",String(index+1)),node("span","",name));
+      button.addEventListener("click", ()=>{ state.step=index; localStorage.setItem(STEP_KEY,String(index)); renderStep(); document.getElementById("builder").scrollIntoView({behavior:"smooth"}); });
+      item.appendChild(button); list.appendChild(item);
+    });
   }
-});
 
-function resetAll(){
-  state.answers = {};
-  state.step = 0;
-  saveAnswers();
-  renderQuestion();
-  renderResume();
-  updateShareLinks();
-  toast(getText("Сброшено","Скинуто","Reset","Zresetowano"));
-}
-document.getElementById("resetAllBtn").addEventListener("click", resetAll);
-
-["startBtnRu","startBtnUk","startBtnEn","startBtnPl"].forEach(id=>{
-  const el = document.getElementById(id);
-  if(el){
-    el.addEventListener("click", ()=> scrollIntoViewSmooth("#builder"));
+  function renderStep(){
+    renderStepNavigation();
+    document.getElementById("stepCount").textContent = `${t("step")} ${state.step+1} ${t("of")} ${STEP_COUNT}`;
+    document.getElementById("stepTitle").textContent = t("stepTitles")[state.step];
+    document.getElementById("stepIntro").textContent = t("stepIntros")[state.step];
+    const progress = Math.round(((state.step+1)/STEP_COUNT)*100);
+    document.getElementById("progressRing").style.setProperty("--progress",`${progress}%`);
+    document.getElementById("progressValue").textContent = `${progress}%`;
+    document.getElementById("progressBar").style.width = `${progress}%`;
+    const area = document.getElementById("questionArea"); area.replaceChildren();
+    STEP_RENDERERS[state.step](area);
+    document.getElementById("backBtn").disabled = state.step === 0;
+    document.getElementById("nextBtn").textContent = state.step === STEP_COUNT-1 ? t("viewResults") : t("next");
+    document.getElementById("formError").hidden = true;
   }
-});
-document.getElementById("editBtn").addEventListener("click", ()=>{
-  if(state.isSharedView){
-    state.answers = loadAnswers();
-    state.step = 0;
-    state.isSharedView = false;
-    const url = new URL(location.href);
-    url.searchParams.delete(SHARE_PARAM);
-    url.hash = "builder";
-    history.replaceState(null, "", url);
-    updateUIStrings();
-    renderQuestion();
-    renderResume();
-    updateShareLinks();
+
+  function renderSection(container, title, rows, extraClass){
+    const filtered = rows.filter(row=>row && row.value !== "" && row.value !== null && row.value !== undefined);
+    if(!filtered.length) return null;
+    const section = node("section", `document-section ${extraClass || ""}`.trim());
+    section.appendChild(node("h4", "", title));
+    filtered.forEach(row=>{
+      const line = node("div", "fact-row");
+      line.append(node("span","key",row.key),node("span","value",row.value));
+      section.appendChild(line);
+    });
+    container.appendChild(section); return section;
   }
-  scrollIntoViewSmooth("#builder");
-});
 
-/* =========================
-   8) Resume preview
-========================= */
-const resumeTitle = document.getElementById("resumeTitle");
-const resumeGrid = document.getElementById("resumeGrid");
+  function formatQualification(q, code, locale, publicMode){
+    let status = q.status || "unknown";
+    let text = valueLabel("status",status,locale);
+    if(code === "cpc" && q.cpcType && q.cpcType !== "unknown") text += ` · ${valueLabel("cpc",q.cpcType,locale)}`;
+    if(code === "adr" && q.specialisations && q.specialisations.length) text += ` · ${q.specialisations.map(value=>valueLabel("adr",value,locale)).join(", ")}`;
+    if(!publicMode && q.issuingCountry) text += ` · ${q.issuingCountry}`;
+    if(!publicMode && q.validUntil) text += ` · ${t("validUntil",locale)} ${q.validUntil}`;
+    return text;
+  }
 
-function labelFromOption(qid, value){
-  const q = QUESTION_BANK.find(x=>x.id===qid);
-  if(!q) return value;
-  const opt = (q.options || []).find(o=>o.value===value);
-  if(!opt) return value;
-  return (opt.label[state.lang] || opt.label.en);
-}
-function labelsFromMulti(qid, arr){
-  if(!Array.isArray(arr)) return [];
-  return arr.map(v=>labelFromOption(qid, v));
-}
+  function publicSections(dto, locale){
+    const equipment = dto.experience.equipment.map(item=>`${valueLabel("equipment",item.code,locale)} — ${valueLabel("level",item.level,locale)}`).join("; ");
+    const cargo = dto.experience.cargo.map(item=>`${valueLabel("cargo",item.code,locale)} — ${valueLabel("level",item.level,locale)}`).join("; ");
+    const languages = dto.workingLanguages.map(item=>`${valueLabel("language",item.code,locale)} — ${valueLabel("languageLevel",item.level,locale)}`).join("; ");
+    const baseParts = [valueLabel("country",dto.region.country,locale),dto.region.city].filter(Boolean);
+    const routes = [dto.routes.types.map(value=>valueLabel("route",value,locale)).join(", "),dto.routes.regions.map(value=>valueLabel("routeRegion",value,locale)).join(", "),dto.routes.countries.map(value=>valueLabel("country",value,locale)).join(", ")].filter(Boolean).join(" · ");
+    const shifts = `${t("dayShift",locale)}: ${valueLabel("pref",dto.preferences.shifts.day,locale)}; ${t("nightShift",locale)}: ${valueLabel("pref",dto.preferences.shifts.night,locale)}; ${t("weekends",locale)}: ${valueLabel("pref",dto.preferences.shifts.weekends,locale)}`;
+    const availability = valueLabel("availability",dto.preferences.availability.type,locale) + (dto.preferences.availability.period ? ` · ${dto.preferences.availability.period}` : "");
+    return [
+      {id:"qualifications",title:t("qualifications",locale),rows:[
+        {key:t("ceStatus",locale),value:formatQualification(dto.qualifications.ce,"ce",locale,true)},
+        {key:t("cpcStatus",locale),value:formatQualification(dto.qualifications.cpc,"cpc",locale,true)},
+        {key:t("tachoStatus",locale),value:formatQualification(dto.qualifications.tachograph,"tachograph",locale,true)},
+        {key:t("adrStatus",locale),value:formatQualification(dto.qualifications.adr,"adr",locale,true)}
+      ]},
+      {id:"experience",title:t("experience",locale),rows:[{key:t("actualExperience",locale),value:valueLabel("experience",dto.experience.ceRange,locale)},{key:t("equipmentRow",locale),value:equipment || t("noData",locale)},{key:t("cargoRow",locale),value:cargo || t("noData",locale)}]},
+      {id:"languages",title:t("languages",locale),rows:[{key:t("workingLanguageRow",locale),value:languages || t("noData",locale)}]},
+      {id:"preferences",title:t("preferences",locale),rows:[
+        {key:t("base",locale),value:baseParts.join(", ") || t("unknown",locale)}, {key:t("routeType",locale),value:routes || t("unknown",locale)},
+        {key:t("rotation",locale),value:valueLabel("rotation",dto.preferences.rotation,locale)}, {key:t("homeTime",locale),value:valueLabel("homeTime",dto.preferences.homeTime,locale)},
+        {key:t("conditions",locale),value:shifts}, {key:t("overnights",locale),value:valueLabel("overnight",dto.preferences.overnights,locale)}, {key:t("availabilityRow",locale),value:availability},
+        {key:t("trainingRow",locale),value:dto.training.map(value=>valueLabel("training",value,locale)).join(", ")}
+      ]}
+    ];
+  }
 
-function renderResume(){
-  const name = state.answers.contactName || "—";
-  resumeTitle.textContent = state.isSharedView ? "DRIVER C+E" : `${name} — DRIVER C+E`;
+  function renderPublicDocument(grid,titleElement,dto,locale){
+    titleElement.textContent = dto.displayName || "Driver C+E";
+    grid.replaceChildren();
+    publicSections(dto,locale).forEach(section=>renderSection(grid,section.title,section.rows));
+  }
 
-  const blocks = getResumeBlocks(!state.isSharedView);
+  function cvSections(profile, locale){
+    const q = profile.qualifications;
+    const equipment = profile.experience.equipment.map(item=>`${valueLabel("equipment",item.code,locale)} — ${valueLabel("level",item.level,locale)}`).join("; ");
+    const cargo = profile.experience.cargo.map(item=>`${valueLabel("cargo",item.code,locale)} — ${valueLabel("level",item.level,locale)}`).join("; ");
+    const languages = profile.workingLanguages.map(item=>`${valueLabel("language",item.code,locale)} — ${valueLabel("languageLevel",item.level,locale)}`).join("; ");
+    const base = [valueLabel("country",profile.preferences.baseCountry,locale),profile.preferences.baseCity].filter(Boolean).join(", ");
+    const routes = [profile.preferences.routeTypes.map(value=>valueLabel("route",value,locale)).join(", "),profile.preferences.routeRegions.map(value=>valueLabel("routeRegion",value,locale)).join(", "),profile.preferences.routeCountries.map(value=>valueLabel("country",value,locale)).join(", ")].filter(Boolean).join(" · ");
+    const availability = valueLabel("availability",profile.preferences.availability.type || "unknown",locale) + (profile.preferences.availability.date ? ` · ${profile.preferences.availability.date}` : "");
+    const shifts = `${t("dayShift",locale)}: ${valueLabel("pref",profile.preferences.shifts.day,locale)}; ${t("nightShift",locale)}: ${valueLabel("pref",profile.preferences.shifts.night,locale)}; ${t("weekends",locale)}: ${valueLabel("pref",profile.preferences.shifts.weekends,locale)}`;
+    return [
+      {id:"qualifications",title:t("qualifications",locale),rows:[
+        {key:t("ceStatus",locale),value:formatQualification({...q.ce,status:model.effectiveQualificationStatus(q.ce)},"ce",locale,false)},
+        {key:t("cpcStatus",locale),value:formatQualification({...q.cpc,status:model.effectiveQualificationStatus(q.cpc)},"cpc",locale,false)},
+        {key:t("tachoStatus",locale),value:formatQualification({...q.tachograph,status:model.effectiveQualificationStatus(q.tachograph)},"tachograph",locale,false)},
+        {key:t("adrStatus",locale),value:formatQualification({...q.adr,status:model.effectiveQualificationStatus(q.adr)},"adr",locale,false)}
+      ]},
+      {id:"experience",title:t("experience",locale),rows:[{key:t("actualExperience",locale),value:valueLabel("experience",profile.experience.ceRange || "unknown",locale)},{key:t("equipmentRow",locale),value:equipment},{key:t("cargoRow",locale),value:cargo}]},
+      {id:"languages",title:t("languages",locale),rows:[{key:t("workingLanguageRow",locale),value:languages}]},
+      {id:"preferences",title:t("preferences",locale),rows:[{key:t("base",locale),value:base},{key:t("routeType",locale),value:routes},{key:t("rotation",locale),value:valueLabel("rotation",profile.preferences.rotation || "unknown",locale)},{key:t("homeTime",locale),value:valueLabel("homeTime",profile.preferences.homeTime || "unknown",locale)},{key:t("conditions",locale),value:shifts},{key:t("overnights",locale),value:valueLabel("overnight",profile.preferences.overnights || "unknown",locale)},{key:t("availabilityRow",locale),value:availability},{key:t("trainingRow",locale),value:profile.training.map(value=>valueLabel("training",value,locale)).join(", ")}]},
+      {id:"history",title:t("history",locale),history:profile.experience.employmentHistory.filter(entry=>entry.employer || entry.role || entry.startMonth || entry.endMonth || entry.summary)}
+    ];
+  }
 
-  resumeGrid.innerHTML = "";
-  blocks.forEach(b=>{
-    const kv = document.createElement("div");
-    kv.className = "kv";
-    const k = document.createElement("div");
-    k.className = "k"; k.textContent = b.k;
-    const v = document.createElement("div");
-    v.className = "v"; v.textContent = b.v;
-    kv.appendChild(k); kv.appendChild(v);
-    resumeGrid.appendChild(kv);
+  function selectedCvSections(){ return [...document.querySelectorAll('input[name="cvSection"]:checked')].map(input=>input.value); }
+
+  function renderCV(){
+    const locale = document.getElementById("cvLanguage").value || state.lang;
+    const selected = selectedCvSections();
+    const recipient = document.getElementById("cvRecipient").value.trim();
+    state.profile.cvVariant = {locale,sections:selected,recipient};
+    localStorage.setItem(PROFILE_KEY,JSON.stringify(model.sanitizeProfile(state.profile)));
+    const title = state.profile.privateIdentity.cvName || "Driver C+E";
+    document.getElementById("cvDocumentTitle").textContent = `${title} — C+E`;
+    const recipientLine = document.getElementById("cvRecipientLine"); recipientLine.hidden = !recipient; recipientLine.textContent = recipient ? `${t("recipientRow",locale)}: ${recipient}` : "";
+    document.getElementById("cvDate").textContent = `${t("generated",locale)}: ${model.localDateString()}`;
+    const grid = document.getElementById("cvGrid"); grid.replaceChildren();
+    cvSections(state.profile,locale).filter(section=>selected.includes(section.id)).forEach(section=>{
+      if(section.id === "history"){
+        if(!section.history.length) return;
+        const block = node("section","document-section full"); block.appendChild(node("h4","",section.title));
+        section.history.forEach(entry=>{
+          const item = node("div","history-entry");
+          item.appendChild(node("strong","",[entry.role,entry.employer].filter(Boolean).join(" — ") || t("history",locale)));
+          item.appendChild(node("span","",[entry.startMonth,entry.endMonth].filter(Boolean).join(" — ")));
+          if(entry.summary) item.appendChild(node("p","",entry.summary));
+          block.appendChild(item);
+        });
+        grid.appendChild(block);
+      }else renderSection(grid,section.title,section.rows);
+    });
+    renderSection(grid,t("contact",locale),[
+      {key:t("contact",locale),value:[valueLabel("contact",state.profile.privateIdentity.contact.type,locale),state.profile.privateIdentity.contact.value].filter(Boolean).join(": ")},
+      {key:t("bestTime",locale),value:state.profile.privateIdentity.contact.bestTime}
+    ],"full");
+    const validation = model.validateAddressedCV(state.profile);
+    const sectionNames = selected.map(id=>t(id,locale)).join(", ");
+    document.getElementById("exportSummary").textContent = validation.valid
+      ? `${t("cvReady")} · ${t("language",locale)}: ${locale.toUpperCase()} · ${t("sectionsSelected",locale)}: ${sectionNames}${recipient ? ` · ${t("recipientRow",locale)}: ${recipient}` : ""}`
+      : `${t("cvNeedsContact")} · ${t("language",locale)}: ${locale.toUpperCase()} · ${t("sectionsSelected",locale)}: ${sectionNames}`;
+  }
+
+  function renderOutputs(){
+    const dto = model.buildPublicProfile(state.profile);
+    renderPublicDocument(document.getElementById("publicGrid"),document.getElementById("publicDocumentTitle"),dto,state.lang);
+    renderCV();
+  }
+
+  function documentText(container,title){
+    const lines = [title];
+    container.querySelectorAll(".document-section").forEach(section=>{
+      const heading = section.querySelector("h4");
+      if(heading) lines.push(`\n${heading.textContent}`);
+      section.querySelectorAll(".fact-row").forEach(row=>{
+        const key = row.querySelector(".key"); const value = row.querySelector(".value");
+        if(key && value) lines.push(`${key.textContent}: ${value.textContent}`);
+      });
+      section.querySelectorAll(".history-entry").forEach(entry=>lines.push(entry.innerText.trim()));
+    });
+    return lines.join("\n");
+  }
+
+  async function copyText(text){
+    try{ await navigator.clipboard.writeText(text); toast(t("copied")); return true; }
+    catch(error){ toast(t("copyFailed")); return false; }
+  }
+
+  function ensureDraft(){
+    const validation = model.validateDraft(state.profile);
+    if(validation.valid) return true;
+    toast(t("draftIncomplete"));
+    const firstIncomplete = [0,1,2,3,4].find(index=>!model.validateStep(state.profile,index).valid);
+    if(firstIncomplete !== undefined){ state.step=firstIncomplete; renderStep(); document.getElementById("builder").scrollIntoView({behavior:"smooth"}); }
+    return false;
+  }
+
+  function setOutputTab(tab){
+    const publicSelected = tab === "public";
+    document.getElementById("publicPanel").hidden = !publicSelected;
+    document.getElementById("cvPanel").hidden = publicSelected;
+    document.getElementById("publicTab").setAttribute("aria-selected",String(publicSelected));
+    document.getElementById("cvTab").setAttribute("aria-selected",String(!publicSelected));
+    renderCV();
+  }
+
+  function renderShared(){
+    const editor = document.getElementById("editorView");
+    const intro = document.getElementById("intro");
+    const shared = document.getElementById("sharedView");
+    if(!state.sharedProfile){ editor.hidden=false; intro.hidden=false; shared.hidden=true; return; }
+    editor.hidden=true; intro.hidden=true; shared.hidden=false;
+    document.getElementById("sharedTitle").textContent = state.sharedProfile.displayName || "Driver C+E";
+    renderPublicDocument(document.getElementById("sharedGrid"),document.getElementById("sharedDocumentTitle"),state.sharedProfile,state.lang);
+  }
+
+  document.getElementById("langSelect").addEventListener("change",event=>{
+    state.lang = event.target.value;
+    localStorage.setItem(LANG_KEY,state.lang);
+    applyTranslations();
+    renderStep(); renderOutputs(); renderShared();
   });
-}
 
-function getResumeBlocks(includeContact = true){
-
-  const workType = state.answers.workType ? labelFromOption("workType", state.answers.workType) : "—";
-  const exp = state.answers.experience ? labelFromOption("experience", state.answers.experience) : "—";
-  const trailers = labelsFromMulti("trailers", state.answers.trailers);
-  const regions = labelsFromMulti("regions", state.answers.regions);
-  const schedule = state.answers.schedule ? labelFromOption("schedule", state.answers.schedule) : "—";
-  const docs = labelsFromMulti("documents", state.answers.documents);
-  const status = state.answers.statusEU ? labelFromOption("statusEU", state.answers.statusEU) : "—";
-  const phone = state.answers.contactPhone || "—";
-
-  const blocks = [
-    { k: getText("Профиль","Профіль","Profile","Profil"), v: `Driver C+E • ${workType} • ${exp}` },
-    { k: getText("Техника / прицеп","Техніка / напівпричіп","Equipment / trailer","Sprzęt / naczepa"), v: trailers.length ? trailers.join(", ") : "—" },
-    { k: getText("Маршруты","Маршрути","Routes","Trasy"), v: regions.length ? regions.join(", ") : "—" },
-    { k: getText("График","Графік","Rotation","System"), v: schedule },
-    { k: getText("Документы","Документи","Documents","Dokumenty"), v: docs.length ? docs.join(", ") : "—" },
-    { k: getText("Статус в ЕС","Статус в ЄС","EU status","Status w UE"), v: status }
-  ];
-  if(includeContact){
-    blocks.push({ k: getText("Контакт","Kontakt","Contact","Kontakt"), v: phone });
-  }
-  return blocks;
-}
-
-/* =========================
-   9) Sharing
-========================= */
-const tgShare = document.getElementById("tgShare");
-const waShare = document.getElementById("waShare");
-const fbShare = document.getElementById("fbShare");
-
-function buildShareText(){
-  return `${buildPublicProfileText()}\n\n${getProfileShareUrl()}`;
-}
-function buildResumeText(){
-  const name = state.answers.contactName || "—";
-  const rows = getResumeBlocks();
-  return [`${name} — DRIVER C+E`, ...rows.map(row=>`${row.k}: ${row.v}`)].join("\n");
-}
-function buildPublicProfileText(){
-  const rows = getResumeBlocks(false);
-  return ["DRIVER C+E", ...rows.map(row=>`${row.k}: ${row.v}`)].join("\n");
-}
-function getProfileShareUrl(){
-  const currentUrl = new URL(location.href);
-  const url = new URL(currentUrl.origin + currentUrl.pathname);
-  url.searchParams.set(SHARE_PARAM, encodeProfile(sanitizeProfessionalAnswers(state.answers)));
-  url.hash = "result";
-  return url.toString();
-}
-function ensureProfileReady(){
-  if(isProfileComplete()) return true;
-  toast(getText("Сначала заполните все шаги резюме","Спочатку заповніть усі кроки резюме","Complete all resume steps first","Najpierw uzupełnij wszystkie kroki CV"));
-  goToFirstIncompleteStep();
-  return false;
-}
-function updateShareLinks(){
-  const url = getProfileShareUrl();
-  const text = encodeURIComponent(buildShareText());
-  tgShare.href = `https://t.me/share/url?url=${encodeURIComponent(url)}&text=${text}`;
-  waShare.href = `https://wa.me/?text=${text}`;
-  fbShare.href = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`;
-}
-
-document.getElementById("copyLinkBtn").addEventListener("click", async ()=>{
-  if(!ensureProfileReady()) return;
-  const url = getProfileShareUrl();
-  try{
-    await navigator.clipboard.writeText(url);
-    toast(getText("Ссылка скопирована","Посилання скопійовано","Link copied","Link skopiowany"));
-  }catch(e){
-    toast(getText("Не удалось скопировать","Не вдалося скопіювати","Copy failed","Nie udało się skopiować"));
-  }
-});
-document.getElementById("copyTextBtn").addEventListener("click", async ()=>{
-  if(!ensureProfileReady()) return;
-  try{
-    await navigator.clipboard.writeText(buildResumeText());
-    toast(getText("Текст скопирован","Текст скопійовано","Text copied","Tekst skopiowany"));
-  }catch(e){
-    toast(getText("Не удалось скопировать","Не вдалося скopiować","Copy failed","Nie udało się skopiować"));
-  }
-});
-
-[tgShare, waShare, fbShare].forEach(link=>{
-  link.addEventListener("click", event=>{
-    if(!ensureProfileReady()) event.preventDefault();
+  document.getElementById("stepForm").addEventListener("submit",event=>{
+    event.preventDefault();
+    if(state.step < STEP_COUNT-1){ state.step += 1; localStorage.setItem(STEP_KEY,String(state.step)); renderStep(); document.getElementById("builder").scrollIntoView({behavior:"smooth"}); }
+    else{ renderOutputs(); document.getElementById("outputs").scrollIntoView({behavior:"smooth"}); }
   });
-});
+  document.getElementById("backBtn").addEventListener("click",()=>{ if(state.step>0){state.step-=1;localStorage.setItem(STEP_KEY,String(state.step));renderStep();} });
+  document.getElementById("publicTab").addEventListener("click",()=>setOutputTab("public"));
+  document.getElementById("cvTab").addEventListener("click",()=>setOutputTab("cv"));
+  document.getElementById("cvLanguage").addEventListener("change",renderCV);
+  document.getElementById("cvRecipient").addEventListener("input",renderCV);
+  document.querySelectorAll('input[name="cvSection"]').forEach(input=>input.addEventListener("change",renderCV));
+  document.getElementById("copyPublicTextBtn").addEventListener("click",()=>{
+    if(!ensureDraft()) return;
+    copyText(documentText(document.getElementById("publicGrid"),document.getElementById("publicDocumentTitle").textContent));
+  });
+  document.getElementById("copyPreviewLinkBtn").addEventListener("click",()=>{
+    if(!ensureDraft()) return;
+    const url = new URL(location.origin + location.pathname);
+    url.searchParams.set(SHARE_PARAM,model.encodePublicProfile(model.buildPublicProfile(state.profile)));
+    url.hash = "public-profile";
+    copyText(url.toString()).then(success=>{if(success) toast(t("previewReady"));});
+  });
+  document.getElementById("copyCvBtn").addEventListener("click",()=>{
+    if(!model.validateAddressedCV(state.profile).valid){toast(t("cvIncomplete"));state.step=5;renderStep();document.getElementById("builder").scrollIntoView({behavior:"smooth"});return;}
+    copyText(documentText(document.getElementById("cvGrid"),document.getElementById("cvDocumentTitle").textContent));
+  });
+  document.getElementById("printCvBtn").addEventListener("click",()=>{
+    if(!model.validateAddressedCV(state.profile).valid){toast(t("cvIncomplete"));state.step=5;renderStep();document.getElementById("builder").scrollIntoView({behavior:"smooth"});return;}
+    toast(t("printHint")); setTimeout(()=>window.print(),250);
+  });
+  document.getElementById("deleteDraftBtn").addEventListener("click",()=>{
+    if(!window.confirm(t("deleteConfirm"))) return;
+    localStorage.removeItem(PROFILE_KEY); localStorage.removeItem(LEGACY_KEY); localStorage.removeItem(STEP_KEY);
+    state.profile=model.createEmptyProfile(state.lang);state.step=0;renderStep();renderOutputs();toast(t("deleted"));
+  });
+  document.getElementById("buildOwnBtn").addEventListener("click",()=>{
+    const url = new URL(location.origin + location.pathname); url.hash="builder"; history.replaceState(null,"",url);
+    state.sharedProfile=null; renderShared(); renderStep(); renderOutputs(); document.getElementById("builder").scrollIntoView({behavior:"smooth"});
+  });
 
-/* =========================
-   10) Scroll spy + meter progress
-========================= */
-const sections = ["intro","how","builder","result"].map(id=>document.getElementById(id));
-const navLinks = Array.from(document.querySelectorAll(".menu a[data-nav]"));
-
-function setActiveNav(id){
-  navLinks.forEach(a=> a.classList.toggle("active", a.dataset.nav === id));
-}
-function onScroll(){
-  let current = "intro";
-  for(const s of sections){
-    const r = s.getBoundingClientRect();
-    if(r.top <= 110) current = s.id;
-  }
-  setActiveNav(current);
-
-  const doc = document.documentElement;
-  const scrollTop = doc.scrollTop || document.body.scrollTop;
-  const scrollHeight = doc.scrollHeight - doc.clientHeight;
-  const t = scrollHeight > 0 ? (scrollTop / scrollHeight) : 0;
-
-  const path = document.getElementById("meterProgress");
-  const len = path.getTotalLength();
-  path.style.strokeDasharray = `${len}`;
-  path.style.strokeDashoffset = `${len * (1 - t)}`;
-}
-window.addEventListener("scroll", onScroll, {passive:true});
-
-/* =========================
-   11) Meter ticks
-========================= */
-(function renderTicks(){
-  const svg = document.querySelector(".bg-meter svg");
-  const g = svg.querySelector(".ticks");
-  const cx=300, cy=420, r=220;
-  const start = Math.PI;
-  const end = 0;
-  const n=24;
-  for(let i=0;i<=n;i++){
-    const a = start + (end-start)*(i/n);
-    const x1 = cx + Math.cos(a)*(r-2);
-    const y1 = cy + Math.sin(a)*(r-2);
-    const x2 = cx + Math.cos(a)*(r-22);
-    const y2 = cy + Math.sin(a)*(r-22);
-    const line = document.createElementNS("http://www.w3.org/2000/svg","line");
-    line.setAttribute("x1", x1); line.setAttribute("y1", y1);
-    line.setAttribute("x2", x2); line.setAttribute("y2", y2);
-    g.appendChild(line);
-  }
+  applyTranslations();
+  document.getElementById("cvLanguage").value = state.profile.cvVariant.locale || state.lang;
+  document.getElementById("cvRecipient").value = state.profile.cvVariant.recipient || "";
+  document.querySelectorAll('input[name="cvSection"]').forEach(input=>{input.checked = state.profile.cvVariant.sections.includes(input.value);});
+  renderStep(); renderOutputs(); renderShared();
+  document.getElementById("saveState").textContent = migrationNotice ? t("migrated") : t("saved");
 })();
-
-/* =========================
-   12) Init
-========================= */
-document.getElementById("langSelect").addEventListener("change", (e)=> setLang(e.target.value));
-
-document.getElementById("gdpr").addEventListener("change", (e)=>{
-  state.answers.gdpr = !!e.target.checked;
-  saveAnswers();
-});
-
-setLang(state.lang);
-updateUIStrings();
-renderQuestion();
-renderResume();
-updateShareLinks();
-onScroll();

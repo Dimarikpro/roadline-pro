@@ -1,290 +1,207 @@
-<!-- index.html -->
 <!doctype html>
 <html lang="ru">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Roadline CV — Профессиональное резюме водителя</title>
-  <meta name="description" content="Создайте профессиональное резюме водителя C+E для работы в Европе за 3 минуты. Бесплатно. Без регистрации." />
-  <link rel="stylesheet" href="./cv.css" />
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="description" content="Roadline CV 2.0 — профессиональный профиль водителя C+E, приватное CV и безопасный публичный preview.">
+  <meta name="referrer" content="no-referrer">
+  <title>Roadline CV 2.0 — профиль водителя C+E</title>
+  <link rel="stylesheet" href="./cv.css">
 </head>
-
 <body>
-  <!-- subtle background meter -->
-  <div class="bg-meter" aria-hidden="true">
-    <svg viewBox="0 0 600 600">
-      <path class="arcBase" d="M120,420 A220,220 0 1,1 480,420" fill="none" stroke-width="10" />
-      <g class="ticks" fill="none" stroke-width="3"></g>
-      <path id="meterProgress" class="progress glow" d="M120,420 A220,220 0 1,1 480,420" fill="none" stroke-width="12" stroke-linecap="round"
-            stroke-dasharray="1" stroke-dashoffset="1" />
-    </svg>
-  </div>
-
-  <div class="wrap">
-    <!-- NAV (BLOCK) -->
-    <header class="nav card" id="top">
-      <div class="navRow">
-        <div class="brand">
-          <div class="name">Roadline CV</div>
-          <div class="tag">
-            <span data-lang-inline="ru" class="active">Резюме водителя C+E за 3 минуты</span>
-            <span data-lang-inline="uk">Резюме водія C+E за 3 хвилини</span>
-            <span data-lang-inline="en">Driver C+E resume in 3 minutes</span>
-            <span data-lang-inline="pl">CV kierowcy C+E w 3 minuty</span>
-          </div>
-        </div>
-
-        <nav class="menu" aria-label="Menu">
-          <a href="#intro" data-nav="intro" class="active">
-            <span data-lang-inline="ru" class="active">Старт</span>
-            <span data-lang-inline="uk">Старт</span>
-            <span data-lang-inline="en">Start</span>
-            <span data-lang-inline="pl">Start</span>
-          </a>
-          <a href="#how" data-nav="how">
-            <span data-lang-inline="ru" class="active">Как это работает</span>
-            <span data-lang-inline="uk">Як це працює</span>
-            <span data-lang-inline="en">How it works</span>
-            <span data-lang-inline="pl">Jak to działa</span>
-          </a>
-          <a href="#builder" data-nav="builder">
-            <span data-lang-inline="ru" class="active">Создать CV</span>
-            <span data-lang-inline="uk">Створити CV</span>
-            <span data-lang-inline="en">Build CV</span>
-            <span data-lang-inline="pl">Stwórz CV</span>
-          </a>
-          <a href="#result" data-nav="result">
-            <span data-lang-inline="ru" class="active">Результат</span>
-            <span data-lang-inline="uk">Результат</span>
-            <span data-lang-inline="en">Result</span>
-            <span data-lang-inline="pl">Wynik</span>
-          </a>
-
-          <select class="lang" id="langSelect" aria-label="Language">
+  <header class="site-header no-print">
+    <div class="shell header-row">
+      <a class="brand" href="#top" aria-label="Roadline CV 2.0">
+        <span class="brand-mark" aria-hidden="true">R</span>
+        <span><strong>Roadline CV</strong><small>Professional driver profile</small></span>
+      </a>
+      <div class="header-actions">
+        <span class="save-state" id="saveState" role="status"></span>
+        <label class="language-picker">
+          <span class="sr-only" data-i18n="language">Language</span>
+          <select id="langSelect" aria-label="Language">
             <option value="ru">RU</option>
-            <option value="uk">UA</option>
+            <option value="uk">UK</option>
             <option value="en">EN</option>
             <option value="pl">PL</option>
           </select>
-        </nav>
+        </label>
       </div>
-    </header>
+    </div>
+  </header>
 
-    <main class="stack" style="margin-top:12px;">
-      <!-- INTRO (BLOCK) -->
-      <section id="intro" class="card section">
-        <div data-lang="ru" class="active">
-          <h1>Профессиональное резюме водителя для работы в Европе</h1>
-          <p style="margin-top:8px;">
-            Сделайте резюме водителя <span class="strong">C+E</span> за <span class="strong">3 минуты</span>.
-            Без регистрации. Без “28 полей”. Только выбор кнопками.
-          </p>
-          <div class="btnRow" style="margin-top:12px;">
-            <button class="btn" id="startBtnRu" type="button">Создать резюме</button>
-            <a class="btn secondary" href="#how">Посмотреть как работает</a>
-          </div>
-          <p class="tiny" style="margin-top:10px;">
-            Данные сохраняются только в вашем браузере. Мы не продаём данные третьим лицам.
-          </p>
-        </div>
-
-        <div data-lang="uk">
-          <h1>Професійне резюме водія для роботи в Європі</h1>
-          <p style="margin-top:8px;">
-            Створіть резюме водія <span class="strong">C+E</span> за <span class="strong">3 хвилини</span>.
-            Без реєстрації. Без “28 полів”. Лише вибір кнопками.
-          </p>
-          <div class="btnRow" style="margin-top:12px;">
-            <button class="btn" id="startBtnUk" type="button">Створити резюме</button>
-            <a class="btn secondary" href="#how">Подивитись як працює</a>
-          </div>
-          <p class="tiny" style="margin-top:10px;">
-            Дані зберігаються лише у вашому браузері. Ми не продаємо дані третім особам.
-          </p>
-        </div>
-
-        <div data-lang="en">
-          <h1>Professional driver resume for Europe</h1>
-          <p style="margin-top:8px;">
-            Build a <span class="strong">C+E</span> driver resume in <span class="strong">3 minutes</span>.
-            No registration. No long forms. Just quick choices.
-          </p>
-          <div class="btnRow" style="margin-top:12px;">
-            <button class="btn" id="startBtnEn" type="button">Build resume</button>
-            <a class="btn secondary" href="#how">See how it works</a>
-          </div>
-          <p class="tiny" style="margin-top:10px;">
-            Data stays in your browser. We don’t sell your data to third parties.
-          </p>
-        </div>
-
-        <div data-lang="pl">
-          <h1>Profesjonalne CV kierowcy do pracy w Europie</h1>
-          <p style="margin-top:8px;">
-            Stwórz CV kierowcy <span class="strong">C+E</span> w <span class="strong">3 minuty</span>.
-            Bez rejestracji. Bez długich formularzy. Tylko wybór.
-          </p>
-          <div class="btnRow" style="margin-top:12px;">
-            <button class="btn" id="startBtnPl" type="button">Stwórz CV</button>
-            <a class="btn secondary" href="#how">Zobacz jak to działa</a>
-          </div>
-          <p class="tiny" style="margin-top:10px;">
-            Dane zostają w Twojej przeglądarce. Nie sprzedajemy danych osobom trzecim.
-          </p>
-        </div>
-      </section>
-
-      <!-- HOW (BLOCK) -->
-      <section id="how" class="card section">
-        <div data-lang="ru" class="active">
-          <h2>Как это работает</h2>
-          <div class="hr"></div>
-          <p><span class="strong">1)</span> Вы отвечаете на 8 коротких вопросов (кнопки/галочки).</p>
-          <p style="margin-top:6px;"><span class="strong">2)</span> Сервис собирает профиль в формате, понятном компании.</p>
-          <p style="margin-top:6px;"><span class="strong">3)</span> Вы получаете готовое резюме на экране и можете поделиться ссылкой.</p>
-          <p class="tiny" style="margin-top:10px;">Сейчас MVP: без аккаунтов и без рассылок. Сначала делаем работающий продукт.</p>
-        </div>
-
-        <div data-lang="uk">
-          <h2>Як це працює</h2>
-          <div class="hr"></div>
-          <p><span class="strong">1)</span> Ви відповідаєте на 8 коротких питань (кнопки/прапорці).</p>
-          <p style="margin-top:6px;"><span class="strong">2)</span> Сервіс формує профіль у форматі, зрозумілому компанії.</p>
-          <p style="margin-top:6px;"><span class="strong">3)</span> Ви отримуєте готове резюме на екрані та можете поділитися посиланням.</p>
-          <p class="tiny" style="margin-top:10px;">Зараз MVP: без акаунтів і без розсилок. Спочатку робимо робочий продукт.</p>
-        </div>
-
-        <div data-lang="en">
-          <h2>How it works</h2>
-          <div class="hr"></div>
-          <p><span class="strong">1)</span> Answer 8 quick questions (buttons/checkboxes).</p>
-          <p style="margin-top:6px;"><span class="strong">2)</span> The builder structures your profile in an employer-friendly format.</p>
-          <p style="margin-top:6px;"><span class="strong">3)</span> You get a clean resume preview and can share the link.</p>
-          <p class="tiny" style="margin-top:10px;">MVP now: no accounts, no distribution. First — working product.</p>
-        </div>
-
-        <div data-lang="pl">
-          <h2>Jak to działa</h2>
-          <div class="hr"></div>
-          <p><span class="strong">1)</span> Odpowiadasz na 8 krótkich pytań (przyciski/checkboxy).</p>
-          <p style="margin-top:6px;"><span class="strong">2)</span> Kreator układa profil w formacie czytelnym dla firmy.</p>
-          <p style="margin-top:6px;"><span class="strong">3)</span> Dostajesz podgląd CV i możesz udostępnić link.</p>
-          <p class="tiny" style="margin-top:10px;">MVP: bez kont i bez wysyłek. Najpierw robimy działający produkt.</p>
-        </div>
-
-        <div class="btnRow" style="margin-top:12px;">
-          <a class="btn" href="#builder">Перейти к созданию</a>
-          <button class="btn secondary" type="button" id="resetAllBtn">Сбросить ответы</button>
-        </div>
-      </section>
-
-      <!-- BUILDER (BLOCK) -->
-      <section id="builder" class="card section">
-        <div class="wizTop">
-          <h2>
-            <span data-lang-inline="ru" class="active">Создать резюме C+E</span>
-            <span data-lang-inline="uk">Створити резюме C+E</span>
-            <span data-lang-inline="en">Build C+E resume</span>
-            <span data-lang-inline="pl">Stwórz CV C+E</span>
-          </h2>
-          <div class="pill" id="stepPill">—</div>
-        </div>
-        <div class="progressBar" style="margin-top:10px;"><div id="stepBar"></div></div>
-
-        <div class="wizard" style="margin-top:12px;">
-          <div id="questionArea"></div>
-
-          <div class="btnRow" style="margin-top:14px;">
-            <button class="btn secondary" id="backBtn" type="button">Назад</button>
-            <button class="btn" id="nextBtn" type="button">Далее</button>
+  <main id="top">
+    <section class="hero no-print" id="intro">
+      <div class="shell hero-grid">
+        <div>
+          <p class="eyebrow" data-i18n="eyebrow">ROADLINE CV 2.0</p>
+          <h1 data-i18n="heroTitle">Профессиональный профиль водителя C+E</h1>
+          <p class="hero-copy" data-i18n="heroCopy">Квалификации, реальный опыт и условия работы — отдельно и без лишних данных.</p>
+          <div class="hero-actions">
+            <a class="button primary" href="#builder" data-i18n="start">Создать профиль</a>
+            <a class="button ghost" href="#outputs" data-i18n="seeOutputs">Как выглядит результат</a>
           </div>
         </div>
-      </section>
+        <aside class="privacy-card">
+          <span class="privacy-icon" aria-hidden="true">✓</span>
+          <div>
+            <strong data-i18n="localFirst">Черновик остаётся в этом браузере</strong>
+            <p data-i18n="localFirstCopy">Контакт не нужен для сохранения. В публичный preview он не попадёт.</p>
+          </div>
+        </aside>
+      </div>
+    </section>
 
-      <!-- RESULT (BLOCK) -->
-      <section id="result" class="card section">
-        <h2>
-          <span data-lang-inline="ru" class="active">Результат</span>
-          <span data-lang-inline="uk">Результат</span>
-          <span data-lang-inline="en">Result</span>
-          <span data-lang-inline="pl">Wynik</span>
-        </h2>
-        <div class="hr"></div>
-
-        <div class="sharedNotice" id="sharedNotice" role="status" hidden></div>
-
-        <div class="resume" id="resumeBox">
-          <h3 id="resumeTitle">—</h3>
-          <div class="grid" id="resumeGrid"></div>
+    <section class="shared-shell shell" id="sharedView" hidden>
+      <div class="shared-banner no-print">
+        <div>
+          <p class="eyebrow" data-i18n="publicPreview">ПУБЛИЧНЫЙ PREVIEW</p>
+          <h1 id="sharedTitle">Driver C+E</h1>
+          <p data-i18n="sharedNotice">Это профессиональная карточка без контактов. Она доступна только для чтения и не является проверенной квалификацией.</p>
         </div>
-
-        <div class="hr"></div>
-
-        <div class="card inner">
-          <div data-lang="ru" class="active">
-            <p class="strong">Поделиться</p>
-            <p class="tiny" style="margin-top:4px;">Ссылка содержит только профессиональные данные. Имя и телефон не включаются.</p>
+        <button class="button ghost" id="buildOwnBtn" type="button" data-i18n="buildOwn">Создать свой профиль</button>
+      </div>
+      <article class="profile-document" id="sharedDocument">
+        <div class="document-heading">
+          <div>
+            <span class="document-kicker">Roadline CV 2.0</span>
+            <h2 id="sharedDocumentTitle">Driver C+E</h2>
           </div>
-          <div data-lang="uk">
-            <p class="strong">Поділитися</p>
-            <p class="tiny" style="margin-top:4px;">Посилання містить лише професійні дані. Ім’я та телефон не включаються.</p>
-          </div>
-          <div data-lang="en">
-            <p class="strong">Share</p>
-            <p class="tiny" style="margin-top:4px;">The link contains professional data only. Name and phone are not included.</p>
-          </div>
-          <div data-lang="pl">
-            <p class="strong">Udostępnij</p>
-            <p class="tiny" style="margin-top:4px;">Link zawiera tylko dane zawodowe. Imię i telefon nie są dołączone.</p>
-          </div>
+          <span class="status-badge" data-i18n="selfDeclared">Заявлено водителем</span>
+        </div>
+        <div id="sharedGrid" class="document-sections"></div>
+      </article>
+    </section>
 
-          <div class="btnRow" style="margin-top:10px;">
-            <button class="btn secondary" id="copyLinkBtn" type="button">Скопировать ссылку</button>
-            <button class="btn secondary" id="copyTextBtn" type="button">Скопировать текст</button>
-          </div>
+    <div id="editorView">
+      <section class="builder-section no-print" id="builder">
+        <div class="shell builder-layout">
+          <aside class="step-nav" aria-label="Profile steps">
+            <p class="eyebrow" data-i18n="profileProgress">ПРОФИЛЬ</p>
+            <ol id="stepList"></ol>
+            <div class="draft-note">
+              <strong data-i18n="draftTitle">Автосохранение</strong>
+              <p data-i18n="draftCopy">Данные хранятся локально. На общем телефоне удалите черновик после экспорта.</p>
+            </div>
+          </aside>
 
-          <div class="btnRow" style="margin-top:10px;">
-            <a class="btn secondary" id="tgShare" href="#" target="_blank" rel="noopener">Telegram</a>
-            <a class="btn secondary" id="waShare" href="#" target="_blank" rel="noopener">WhatsApp</a>
-          </div>
-
-          <div class="btnRow" style="margin-top:10px;">
-            <a class="btn secondary" id="fbShare" href="#" target="_blank" rel="noopener">Facebook</a>
-            <button class="btn" id="editBtn" type="button">Редактировать ответы</button>
-          </div>
-
-          <div class="hr"></div>
-
-          <label class="opt static">
-            <input type="checkbox" id="gdpr" />
-            <div>
-              <div class="lbl">
-                <span data-lang-inline="ru" class="active">Согласие на обработку данных</span>
-                <span data-lang-inline="uk">Згода на обробку даних</span>
-                <span data-lang-inline="en">Consent to data processing</span>
-                <span data-lang-inline="pl">Zgoda na przetwarzanie danych</span>
+          <div class="form-card">
+            <div class="form-heading">
+              <div>
+                <p class="step-count" id="stepCount"></p>
+                <h2 id="stepTitle"></h2>
+                <p id="stepIntro"></p>
               </div>
-              <div class="sub">
-                <span data-lang="ru" class="active">Данные используются только для формирования резюме и связи по запросу. Без продажи третьим лицам.</span>
-                <span data-lang="uk">Дані використовуються лише для формування резюме та зв’язку за запитом. Без продажу третім особам.</span>
-                <span data-lang="en">Data is used only to generate the resume and contact you upon request. No selling to third parties.</span>
-                <span data-lang="pl">Dane służą wyłącznie do stworzenia CV i kontaktu na Twoją prośbę. Bez sprzedaży osobom trzecim.</span>
+              <div class="progress-ring" id="progressRing" aria-hidden="true"><span id="progressValue">0%</span></div>
+            </div>
+            <div class="progress-track" aria-hidden="true"><span id="progressBar"></span></div>
+            <form id="stepForm" novalidate>
+              <div id="questionArea"></div>
+              <div class="form-error" id="formError" role="alert" hidden></div>
+              <div class="form-actions">
+                <button class="button ghost" id="backBtn" type="button" data-i18n="back">Назад</button>
+                <button class="button primary" id="nextBtn" type="submit" data-i18n="next">Далее</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </section>
+
+      <section class="outputs-section no-print" id="outputs">
+        <div class="shell">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow" data-i18n="twoOutputs">ДВА РЕЗУЛЬТАТА</p>
+              <h2 data-i18n="outputsTitle">Один источник фактов — разные уровни доступа</h2>
+              <p data-i18n="outputsCopy">Публичный preview исключает контакты по схеме. Адресное CV создаётся только после вашего выбора.</p>
+            </div>
+            <button class="text-button danger" id="deleteDraftBtn" type="button" data-i18n="deleteDraft">Удалить черновик</button>
+          </div>
+
+          <div class="output-tabs" role="tablist" aria-label="Output type">
+            <button class="output-tab active" id="publicTab" type="button" role="tab" aria-selected="true" aria-controls="publicPanel" data-i18n="publicProfile">Публичный preview</button>
+            <button class="output-tab" id="cvTab" type="button" role="tab" aria-selected="false" aria-controls="cvPanel" data-i18n="privateCv">Адресное CV</button>
+          </div>
+
+          <div class="output-panel" id="publicPanel" role="tabpanel" aria-labelledby="publicTab">
+            <div class="output-toolbar">
+              <div class="disclosure-summary">
+                <strong data-i18n="publicContains">В preview входят</strong>
+                <p data-i18n="publicContainsCopy">Псевдоним, профессиональные статусы, опыт, языки, регион и общие условия. Без имени, контакта, работодателей и точных дат.</p>
+              </div>
+              <div class="toolbar-actions">
+                <button class="button ghost" id="copyPublicTextBtn" type="button" data-i18n="copyText">Копировать текст</button>
+                <button class="button primary" id="copyPreviewLinkBtn" type="button" data-i18n="copyPreviewLink">Копировать preview-ссылку</button>
               </div>
             </div>
-          </label>
+            <p class="link-warning" data-i18n="linkWarning">Ссылка кодирует разрешённые поля, но не является шифрованием и не может быть отозвана. Не публикуйте её, если не хотите раскрывать карточку.</p>
+            <article class="profile-document compact" id="publicDocument">
+              <div class="document-heading">
+                <div>
+                  <span class="document-kicker">Roadline CV 2.0</span>
+                  <h3 id="publicDocumentTitle">Driver C+E</h3>
+                </div>
+                <span class="status-badge" data-i18n="selfDeclared">Заявлено водителем</span>
+              </div>
+              <div id="publicGrid" class="document-sections"></div>
+            </article>
+          </div>
 
-          <p class="tiny" style="margin-top:10px;">MVP: PDF-скачивание добавим следующим шагом. Сейчас — быстрый конструктор + результат.</p>
+          <div class="output-panel" id="cvPanel" role="tabpanel" aria-labelledby="cvTab" hidden>
+            <div class="cv-controls">
+              <div class="field">
+                <label for="cvLanguage" data-i18n="cvLanguage">Язык CV</label>
+                <select id="cvLanguage">
+                  <option value="ru">Русский</option>
+                  <option value="uk">Українська</option>
+                  <option value="en">English</option>
+                  <option value="pl">Polski</option>
+                </select>
+              </div>
+              <div class="field grow">
+                <label for="cvRecipient" data-i18n="recipient">Получатель (необязательно)</label>
+                <input id="cvRecipient" type="text" maxlength="100" autocomplete="organization" data-i18n-placeholder="recipientPlaceholder" placeholder="Название компании или вакансии">
+              </div>
+              <fieldset class="section-picker">
+                <legend data-i18n="sections">Разделы CV</legend>
+                <label><input type="checkbox" name="cvSection" value="qualifications" checked> <span data-i18n="qualifications">Квалификации</span></label>
+                <label><input type="checkbox" name="cvSection" value="experience" checked> <span data-i18n="experience">Опыт</span></label>
+                <label><input type="checkbox" name="cvSection" value="languages" checked> <span data-i18n="languages">Языки</span></label>
+                <label><input type="checkbox" name="cvSection" value="preferences" checked> <span data-i18n="preferences">Условия</span></label>
+                <label><input type="checkbox" name="cvSection" value="history"> <span data-i18n="history">История работы</span></label>
+              </fieldset>
+            </div>
+            <div class="export-summary" id="exportSummary" role="status"></div>
+            <div class="toolbar-actions cv-actions">
+              <button class="button ghost" id="copyCvBtn" type="button" data-i18n="copyCv">Копировать CV</button>
+              <button class="button primary" id="printCvBtn" type="button" data-i18n="printCv">Печать / сохранить PDF</button>
+            </div>
+            <article class="profile-document cv-document" id="cvDocument">
+              <div class="document-heading">
+                <div>
+                  <span class="document-kicker">Roadline CV 2.0</span>
+                  <h3 id="cvDocumentTitle">Driver C+E</h3>
+                  <p id="cvRecipientLine" hidden></p>
+                </div>
+                <span class="cv-date" id="cvDate"></span>
+              </div>
+              <div id="cvGrid" class="document-sections"></div>
+            </article>
+          </div>
         </div>
       </section>
+    </div>
+  </main>
 
-      <footer class="card footer">
-        <p class="tiny">© Roadline CV. All rights reserved. <span class="dim">|</span> roadline.pro <span class="dim">|</span> v0.1</p>
-      </footer>
-    </main>
-  </div>
+  <footer class="site-footer no-print">
+    <div class="shell footer-row">
+      <span>Roadline CV 2.0</span>
+      <span data-i18n="footerCopy">Локальный профессиональный профиль. Без загрузки документов.</span>
+    </div>
+  </footer>
 
-  <div class="toast" id="toast">—</div>
-
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <script src="./cv-model.js"></script>
   <script src="./cv.js"></script>
 </body>
 </html>
