@@ -744,8 +744,6 @@
 
   document.getElementById("stepForm").addEventListener("submit",event=>{
     event.preventDefault();
-    const validation = model.validateStep(state.profile,state.step);
-    if(!validation.valid){ const error=document.getElementById("formError"); error.textContent=t("completeStep"); error.hidden=false; return; }
     if(state.step < STEP_COUNT-1){ state.step += 1; localStorage.setItem(STEP_KEY,String(state.step)); renderStep(); document.getElementById("builder").scrollIntoView({behavior:"smooth"}); }
     else{ renderOutputs(); document.getElementById("outputs").scrollIntoView({behavior:"smooth"}); }
   });

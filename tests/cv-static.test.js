@@ -81,3 +81,11 @@ test("print stylesheet hides export controls and the public profile", ()=>{
   }
   assert.match(printBlock, /#cvDocument\s*\{[^}]*display:block\s*!important/s);
 });
+
+test("step navigation permits optional fields while exports keep separate validation gates", ()=>{
+  assert.doesNotMatch(appSource, /getElementById\("stepForm"\)[\s\S]{0,500}validateStep/);
+  assert.match(appSource, /state\.step \+= 1; localStorage\.setItem\(STEP_KEY,String\(state\.step\)\)/);
+  assert.match(appSource, /copyPreviewLinkBtn[\s\S]{0,300}ensureDraft\(\)/);
+  assert.match(appSource, /copyCvBtn[\s\S]{0,300}validateAddressedCV/);
+  assert.match(appSource, /printCvBtn[\s\S]{0,300}validateAddressedCV/);
+});
