@@ -51,12 +51,27 @@
     return value.replace(/[\u0000-\u001F\u007F]/g, " ").replace(/\s+/g, " ").trim().slice(0, maxLength);
   }
 
-  function cleanPublicDisplayName(value){
-    const text = cleanString(value, 40);
+  function containsContactData(value, options = {}){
+    const text = cleanString(value, 240);
+    if(!text) return false;
     const digitCount = (text.match(/\d/g) || []).length;
-    const contactPattern = /(?:@|https?:\/\/|www\.|(?:t|wa)\.me\/|\b(?:e-?mail|mail|phone|tel(?:ephone)?|whatsapp|telegram|signal|viber)\b)/i;
-    if(contactPattern.test(text) || digitCount >= 6) return "";
-    return text;
+    const urlPattern = /(?:https?:\/\/|www\.|(?:t|wa)\.me\/|telegram\.me\/|(?:[a-z0-9-]+\.)+(?:[a-z]{2,24}|рф|укр|бел|рус)(?:[/?#:]|$))/i;
+    const contactWordPattern = /(?:^|[\s,;:|])(?:e-?mail|mail|phone|tel(?:ephone)?\.?|whats?app|telegram|signal|viber|messenger|contact|kontakt|telefon|телефон|тел\.?|почт[аы]|емейл|контакт|телеграм|вайбер|ватсап|зв['’]?язок)(?=$|[\s,;:|])/i;
+    const obfuscatedEmailPattern = /(?:\[at\]|\(at\)|\sat\s).*(?:\[dot\]|\(dot\)|\sdot\s)/i;
+    const exactAddressPattern = /(?:^|[\s,;])(?:ul(?:ica)?\.?|aleja|street|road|avenue|улица|ул\.?|вулиця|вул\.?)\s+\S+/i;
+    const postalCodePattern = /\b\d{2}[- ]\d{3}\b/;
+    return text.includes("@") || digitCount >= 6 || urlPattern.test(text) || contactWordPattern.test(text)
+      || obfuscatedEmailPattern.test(text)
+      || (options.rejectAddress === true && (/\d/.test(text) || exactAddressPattern.test(text) || postalCodePattern.test(text)));
+  }
+
+  function cleanPublicText(value, maxLength, options = {}){
+    const text = cleanString(value, maxLength);
+    return containsContactData(text, options) ? "" : text;
+  }
+
+  function cleanPublicDisplayName(value){
+    return cleanPublicText(value, 40);
   }
 
   function cleanDate(value){
@@ -66,6 +81,11 @@
 
   function enumValue(value, allowed, fallback = ""){
     return allowed.has(value) ? value : fallback;
+  }
+
+  function cleanCountryCode(value){
+    const code = cleanString(value, 16).toUpperCase();
+    return /^[A-Z]{2}$/.test(code) ? code : "";
   }
 
   function uniqueEnums(values, allowed, limit = 30){
@@ -204,11 +224,11 @@
     }
 
     const preferences = value.preferences && typeof value.preferences === "object" ? value.preferences : {};
-    profile.preferences.baseCountry = cleanString(preferences.baseCountry, 2).toUpperCase();
+    profile.preferences.baseCountry = cleanCountryCode(preferences.baseCountry);
     profile.preferences.baseCity = cleanString(preferences.baseCity, 80);
     profile.preferences.routeTypes = uniqueEnums(preferences.routeTypes, ROUTE_TYPES, 4);
     profile.preferences.routeCountries = Array.isArray(preferences.routeCountries)
-      ? [...new Set(preferences.routeCountries.map(country=>cleanString(country, 2).toUpperCase()).filter(country=>/^[A-Z]{2}$/.test(country)))].slice(0, 20)
+      ? [...new Set(preferences.routeCountries.map(cleanCountryCode).filter(Boolean))].slice(0, 20)
       : [];
     profile.preferences.routeRegions = uniqueEnums(preferences.routeRegions, ROUTE_REGIONS, 3);
     profile.preferences.rotation = enumValue(preferences.rotation, ROTATIONS);
@@ -375,6 +395,7 @@
   function buildPublicProfile(rawProfile, options = {}){
     const profile = sanitizeProfile(rawProfile, options);
     const today = options.today || localDateString(options.now);
+    const publicCity = cleanPublicText(profile.preferences.baseCity, 80, { rejectAddress:true });
     return {
       publicProfileVersion:1,
       professionCode:PROFESSION_CODE,
@@ -398,7 +419,7 @@
         cargo:profile.experience.cargo.map(item=>({ code:item.code, level:item.level }))
       },
       workingLanguages:profile.workingLanguages.map(item=>({ code:item.code, level:item.level })),
-      region:{ country:profile.preferences.baseCountry, city:profile.preferences.baseCity },
+      region:{ country:cleanCountryCode(profile.preferences.baseCountry), city:publicCity },
       routes:{
         types:[...profile.preferences.routeTypes],
         countries:[...profile.preferences.routeCountries],
@@ -450,12 +471,15 @@
         }))
       : [];
     const region = value.region && typeof value.region === "object" ? value.region : {};
-    result.region = { country:cleanString(region.country, 2).toUpperCase(), city:cleanString(region.city, 80) };
+    result.region = {
+      country:cleanCountryCode(region.country),
+      city:cleanPublicText(region.city, 80, { rejectAddress:true })
+    };
     const routes = value.routes && typeof value.routes === "object" ? value.routes : {};
     result.routes = {
       types:uniqueEnums(routes.types, ROUTE_TYPES, 4),
       countries:Array.isArray(routes.countries)
-        ? [...new Set(routes.countries.map(code=>cleanString(code, 2).toUpperCase()).filter(code=>/^[A-Z]{2}$/.test(code)))].slice(0, 20)
+        ? [...new Set(routes.countries.map(cleanCountryCode).filter(Boolean))].slice(0, 20)
         : [],
       regions:uniqueEnums(routes.regions, ROUTE_REGIONS, 3)
     };
@@ -517,6 +541,13 @@
     const profile = sanitizeProfile(rawProfile);
     const errors = [];
     if(!profile.qualifications.ce.status) errors.push("qualification_ce");
+    return { valid:errors.length === 0, errors };
+  }
+
+  function validateProfessionalProfile(rawProfile){
+    const profile = sanitizeProfile(rawProfile);
+    const errors = [];
+    if(!profile.qualifications.ce.status) errors.push("qualification_ce");
     if(!profile.qualifications.cpc.status) errors.push("qualification_cpc");
     if(!profile.qualifications.tachograph.status) errors.push("qualification_tachograph");
     if(!profile.experience.ceRange) errors.push("experience_range");
@@ -536,7 +567,7 @@
 
   function validateAddressedCV(rawProfile){
     const profile = sanitizeProfile(rawProfile);
-    const result = validateDraft(profile);
+    const result = validateProfessionalProfile(profile);
     const errors = [...result.errors];
     if(profile.privateIdentity.cvName.length < 2) errors.push("cv_name");
     const contact = profile.privateIdentity.contact;
@@ -590,6 +621,7 @@
     effectiveQualificationStatus,
     localDateString,
     validateDraft,
+    validateProfessionalProfile,
     validateAddressedCV,
     validateStep
   };

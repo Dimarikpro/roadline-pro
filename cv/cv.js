@@ -511,7 +511,7 @@
   }
 
   function renderReview(container){
-    const completion = model.validateDraft(state.profile);
+    const completion = model.validateProfessionalProfile(state.profile);
     const banner = node("div", "details-panel");
     banner.appendChild(node("strong", "", completion.valid ? t("reviewReady") : t("reviewNotReady")));
     banner.appendChild(node("p", "field-help", t("contactOptional")));

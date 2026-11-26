@@ -131,6 +131,75 @@ test("contact-like public display names fail closed", ()=>{
   assert.equal(model.buildPublicProfile(profile).displayName, "Driver C+E");
 });
 
+test("contact details and exact addresses in the public city field fail closed", ()=>{
+  const unsafeCities = [
+    "Warsaw, +48 600 123 456",
+    "driver@example.com",
+    "https://example.com/driver",
+    "bit.ly/roadline-driver",
+    "t.me/roadline_driver",
+    "@roadline_driver",
+    "WhatsApp: roadline_driver",
+    "name [at] example [dot] com",
+    "Warszawa, ul. Długa 12",
+    "Warszawa, Długa 12",
+    "00-001 Warszawa"
+  ];
+
+  for(const city of unsafeCities){
+    const profile = completeProfile();
+    profile.preferences.baseCity = city;
+    assert.equal(model.buildPublicProfile(profile).region.city, "", `public DTO leaked ${city}`);
+  }
+
+  const profile = completeProfile();
+  profile.preferences.baseCity = "Poznań";
+  assert.equal(model.buildPublicProfile(profile).region.city, "Poznań");
+});
+
+test("public DTO and encoded URL remove contacts hidden in unexpected fields", ()=>{
+  const profile = completeProfile();
+  profile.publicIdentity.displayName = "Telegram @private_driver";
+  profile.preferences.baseCity = "Berlin, phone +49 151 23456789";
+  profile.privateIdentity = {cvName:"Private Name",contact:{type:"email",value:"private@example.com",bestTime:"18:00"}};
+  profile.experience.employmentHistory = [{
+    employer:"Secret Employer https://employer.example",
+    role:"Driver",
+    startMonth:"2024-01",
+    endMonth:"2025-02",
+    summary:"Signal @private_driver"
+  }];
+  profile.publicBio = "WhatsApp +48 600 123 456";
+  profile.documents = [{number:"DOC-SECRET",url:"https://documents.example/private"}];
+  profile.preferences.routeCountries = ["DE", "driver@example.com"];
+  profile.preferences.baseCountry = "+4";
+
+  const publicProfile = model.buildPublicProfile(profile);
+  assert.equal(publicProfile.displayName, "Driver C+E");
+  assert.deepEqual(publicProfile.region, {country:"",city:""});
+  assert.deepEqual(publicProfile.routes.countries, ["DE"]);
+
+  const encoded = model.encodePublicProfile(publicProfile);
+  const decodedText = Buffer.from(encoded, "base64url").toString("utf8");
+  for(const forbidden of [
+    "private_driver", "+49 151", "Private Name", "private@example.com", "Secret Employer",
+    "employer.example", "WhatsApp", "+48 600", "DOC-SECRET", "documents.example"
+  ]){
+    assert.equal(decodedText.includes(forbidden), false, `public URL leaked ${forbidden}`);
+  }
+});
+
+test("share sanitizer removes contact data from otherwise valid public DTO fields", ()=>{
+  const publicProfile = model.buildPublicProfile(completeProfile());
+  publicProfile.displayName = "driver@example.com";
+  publicProfile.region.city = "www.example.com/profile";
+  publicProfile.region.country = "+4";
+
+  const decoded = model.decodeSharedProfile(model.encodePublicProfile(publicProfile));
+  assert.equal(decoded.publicProfile.displayName, "Driver C+E");
+  assert.deepEqual(decoded.publicProfile.region, {country:"",city:""});
+});
+
 test("share decoder sanitizes injected fields and reads legacy links without contacts", ()=>{
   const publicProfile = model.buildPublicProfile(completeProfile());
   publicProfile.phone = "+48 111 222 333";
@@ -157,6 +226,23 @@ test("draft and public preview do not require contact, targeted CV does", ()=>{
   profile.privateIdentity.cvName = "Alex Driver";
   profile.privateIdentity.contact = {type:"email",value:"alex@example.com",bestTime:""};
   assert.equal(model.validateAddressedCV(profile).valid, true);
+});
+
+test("minimal professional card needs only a C+E answer while targeted CV keeps full requirements", ()=>{
+  const profile = model.createEmptyProfile("en");
+  assert.deepEqual(model.validateDraft(profile), {valid:false,errors:["qualification_ce"]});
+
+  profile.qualifications.ce.status = "unknown";
+  assert.deepEqual(model.validateDraft(profile), {valid:true,errors:[]});
+  assert.equal(model.validateProfessionalProfile(profile).valid, false);
+
+  profile.privateIdentity.cvName = "Alex Driver";
+  profile.privateIdentity.contact = {type:"email",value:"alex@example.com",bestTime:""};
+  const addressed = model.validateAddressedCV(profile);
+  assert.equal(addressed.valid, false);
+  for(const required of ["qualification_cpc", "qualification_tachograph", "experience_range", "working_languages", "base_country", "route_types", "rotation", "home_time", "shifts", "overnights", "availability"]){
+    assert.ok(addressed.errors.includes(required), `targeted CV still requires ${required}`);
+  }
 });
 
 test("encoded public links contain only the public allowlist and no private source values", ()=>{
